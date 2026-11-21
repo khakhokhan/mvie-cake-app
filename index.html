@@ -3,20 +3,350 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>M’Vie Cake — Bakery Tycoon</title>
-  <meta name="description" content="Quản lý kho, sản xuất, đơn hàng, cost và tài chính cho M’Vie Cake.">
+  <title>M’Vie Cake — Bakery Tycoon | Quản Trị Tiệm Bánh</title>
+  <meta name="description" content="Hệ thống quản lý kho nguyên liệu, định lượng công thức, sản xuất, đơn hàng và kế toán quản trị cho M’Vie Cake.">
   <link rel="icon" href="mvie-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="app/globals.css">
   <style>
-    /* Inline SVG helpers */
-    .icon {
+    :root {
+      font-family: 'Be Vietnam Pro', Inter, ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+    }
+
+    /* Fix Modal Overlay so it opens cleanly in the center of the screen */
+    .modal-backdrop {
+      position: fixed !important;
+      z-index: 200 !important;
+      inset: 0 !important;
+      padding: 20px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: rgba(23, 53, 77, 0.62) !important;
+      backdrop-filter: blur(4px);
+      animation: fadeIn 0.18s ease-out;
+    }
+
+    .modal {
+      width: min(740px, 100%) !important;
+      max-height: calc(100vh - 40px) !important;
+      margin: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      border: 3px solid #315f83 !important;
+      border-radius: 24px !important;
+      background: #fffdf9 !important;
+      box-shadow: 0 20px 50px rgba(23, 53, 77, 0.35), 7px 8px 0 rgba(63, 125, 169, 0.25) !important;
+      animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal > header {
+      flex-shrink: 0;
+      padding: 16px 22px !important;
+      background: #e8f7ff !important;
+      border-bottom: 2px solid #9bc9e2 !important;
+    }
+
+    .modal-body {
+      overflow-y: auto !important;
+      max-height: calc(100vh - 130px) !important;
+      padding: 22px !important;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(14px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Toast notification floating top-right */
+    .toast-notice {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      z-index: 300;
+      max-width: 420px;
+      padding: 14px 18px;
+      border: 2.5px solid #2e7d52;
+      background: #ecfdf3;
+      color: #154c2e;
+      border-radius: 16px;
+      font-weight: 800;
+      font-size: 0.88rem;
+      box-shadow: 4px 5px 0 rgba(23, 53, 77, 0.18);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideUp 0.2s ease-out;
+    }
+    .toast-notice.error {
+      border-color: #c93d63;
+      background: #fff0f3;
+      color: #8c2440;
+    }
+
+    /* Sub-navigation & Search Bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 220px;
+      max-width: 360px;
+      position: relative;
+    }
+    .search-box input {
+      min-height: 42px;
+      padding-left: 36px;
+      border-radius: 12px;
+      border: 2px solid #9bc9e2;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .search-box::before {
+      content: "🔍";
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    /* Live Calculation Preview Card inside Forms */
+    .live-preview-box {
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: #f0f9ff;
+      border: 2px dashed #5ba4cf;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 10px;
+    }
+    .live-preview-item small {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #4b7896;
+      text-transform: uppercase;
+    }
+    .live-preview-item b {
+      font-size: 1.02rem;
+      color: #17354d;
+      font-weight: 900;
+    }
+    .live-preview-item b.good { color: #22784b; }
+    .live-preview-item b.warn { color: #c93d63; }
+
+    /* Quick money pills & hints */
+    .money-hint {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #3479aa;
+      margin-top: 2px;
+    }
+
+    /* Stock & Warehouse Grid */
+    .warehouse-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stock-card {
+      padding: 18px;
+      background: #fffdf9;
+      border: 2px solid #9bc9e2;
+      border-radius: 18px;
+      box-shadow: 4px 5px 0 rgba(63, 125, 169, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .stock-card.low-stock {
+      border-color: #e66a88;
+      background: #fff8fa;
+    }
+    .stock-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .stock-head h3 {
+      font-size: 1.05rem;
+      font-weight: 800;
+    }
+    .stock-badge {
+      padding: 4px 9px;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 850;
+      background: #dcf3e5;
+      color: #216e43;
+      white-space: nowrap;
+    }
+    .stock-badge.low {
+      background: #ffd8e2;
+      color: #9e2a47;
+    }
+    .stock-progress {
+      width: 100%;
+      height: 9px;
+      background: #e3eff5;
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid #bfd7e6;
+    }
+    .stock-progress-bar {
+      height: 100%;
+      background: #4ea3d8;
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+    .stock-card.low-stock .stock-progress-bar {
+      background: #e85d7e;
+    }
+    .stock-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #31566f;
+      background: #f4fbff;
+      padding: 10px 12px;
+      border-radius: 12px;
+    }
+    .stock-meta div b {
+      display: block;
+      color: #17354d;
+      font-size: 0.88rem;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn-sm {
+      min-height: 36px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      border: 2px solid #315f83;
+      background: #fff;
+      color: #17354d;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 1em;
-      height: 1em;
-      vertical-align: -0.15em;
-      fill: currentColor;
+      gap: 5px;
+    }
+    .btn-sm:hover { background: #e8f7ff; }
+    .btn-sm.primary-sm {
+      background: #4f9bd0;
+      color: #fff;
+      border-color: #2c6c99;
+      flex: 1;
+    }
+    .btn-sm.primary-sm:hover { background: #3b88be; }
+    .btn-sm.danger-sm {
+      border-color: #dfa1b2;
+      color: #9e2a47;
+      background: #fff5f7;
+    }
+    .btn-sm.danger-sm:hover { background: #ffe0e8; }
+
+    /* Dynamic Line Items in Forms */
+    .line-item-row {
+      display: grid;
+      grid-template-columns: 1.5fr 0.9fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .btn-remove-line {
+      width: 38px;
+      height: 42px;
+      border-radius: 9px;
+      border: 2px solid #dfa1b2;
+      background: #fff0f3;
+      color: #9e2a47;
+      font-weight: 900;
+      font-size: 1.1rem;
+    }
+
+    /* Checklist table in Produce Modal */
+    .check-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 6px;
+    }
+    .check-table th, .check-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #cde2ed;
+    }
+    .check-table th {
+      background: #e8f7ff;
+      font-weight: 800;
+      color: #31566f;
+    }
+
+    /* Alert Banner on Home */
+    .low-stock-banner {
+      grid-column: 1 / -1;
+      padding: 12px 18px;
+      background: #fff4f6;
+      border: 2.5px solid #e66a88;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .low-stock-banner strong { color: #9e2a47; }
+
+    /* Recipe ingredient pills */
+    .recipe-ing-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 10px 0 4px;
+    }
+    .recipe-ing-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      background: #edf7fb;
+      border: 1px solid #bfd9e8;
+      color: #2b5775;
+    }
+
+    .order-note-tag {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 4px 9px;
+      background: #fff6dd;
+      border: 1px solid #e6c875;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: #6e4e13;
     }
   </style>
 </head>
@@ -24,7 +354,7 @@
   <div class="app-shell" id="app">
     <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="brand">
+      <div class="brand" style="cursor:pointer" onclick="setView('home')">
         <img src="mvie-logo.png" alt="M’Vie Cake Logo">
         <div>
           <strong>M’Vie Cake</strong>
@@ -36,30 +366,35 @@
           <span>🏠</span> Trang chủ
         </button>
         <button class="nav-button" id="nav-orders" onclick="setView('orders')">
-          <span>📋</span> Đơn hàng <i id="new-orders-count">0</i>
+          <span>📋</span> Đơn hàng <i id="new-orders-count" style="display:none">0</i>
         </button>
-        <button class="nav-button" onclick="openModal('stock')">
-          <span>📦</span> Nhập hàng
-        </button>
-        <button class="nav-button" onclick="openModal('produce')">
-          <span>👨‍🍳</span> Bếp bánh
+        <button class="nav-button" id="nav-warehouse" onclick="setView('warehouse')">
+          <span>🏬</span> Kho &amp; Tồn <i id="low-stock-count" style="display:none;background:#e65577">0</i>
         </button>
         <button class="nav-button" id="nav-cost" onclick="setView('cost')">
-          <span>📖</span> Công thức
+          <span>📖</span> Công thức &amp; Cost
         </button>
         <button class="nav-button" id="nav-finance" onclick="setView('finance')">
-          <span>🧮</span> Kế toán
+          <span>🧮</span> Kế toán &amp; Quỹ
+        </button>
+        <hr style="border:0;border-top:1.5px dashed #bfd9e8;margin:6px 4px">
+        <button class="nav-button" onclick="openModal('order')">
+          <span>➕</span> Tạo đơn nhanh
+        </button>
+        <button class="nav-button" onclick="openModal('produce')">
+          <span>👨‍🍳</span> Nướng mẻ bánh
         </button>
         <button class="nav-button" onclick="openModal('stock')">
-          <span>🏬</span> Kho &amp; Tồn
-        </button>
-        <button class="nav-button" onclick="setView('finance')">
-          <span>📊</span> Thống kê
+          <span>📦</span> Nhập nguyên liệu
         </button>
       </nav>
       <div class="account">
         <span>Tiệm bánh: <strong>M’Vie Cake</strong></span>
-        <small>Hệ thống quản trị trực tuyến</small>
+        <small style="display:block;color:#4b7896;margin-top:2px">Lưu tự động trên trình duyệt</small>
+        <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn-sm" style="font-size:0.7rem;padding:4px 8px;min-height:28px" onclick="exportDataExcel()">⬇ Excel (.xlsx)</button>
+          <button class="btn-sm" style="font-size:0.7rem;padding:4px 8px;min-height:28px" onclick="openModal('backup')">⚙️ Dữ liệu</button>
+        </div>
       </div>
     </aside>
 
@@ -74,48 +409,55 @@
         <div class="hud-date">
           <span>📅</span> <b id="hud-current-date">Hôm nay</b>
         </div>
-        <div class="hud-chip">
+        <div class="hud-chip" style="cursor:pointer" onclick="setView('finance')" title="Xem báo cáo doanh thu">
           <span>💰</span> <b id="hud-revenue">0 ₫</b>
         </div>
-        <div class="hud-chip">
+        <div class="hud-chip" style="cursor:pointer" onclick="setView('orders')" title="Xem danh sách đơn hàng">
           <span>🧁</span> <b id="hud-today-orders">Đơn hôm nay: 0</b>
         </div>
-        <button class="hud-icon" aria-label="Thông báo" onclick="alert('Tiệm bánh M’Vie Cake đang vận hành tốt!')">🔔</button>
-        <button class="hud-avatar" aria-label="Tài khoản"><img src="mvie-logo.png" alt="Avatar"></button>
+        <button class="hud-icon" aria-label="Xuất Excel" title="Tải báo cáo Excel 6 Sheet" onclick="exportDataExcel()">📥</button>
+        <button class="hud-avatar" aria-label="Cài đặt dữ liệu" title="Sao lưu & Khôi phục dữ liệu" onclick="openModal('backup')"><img src="mvie-logo.png" alt="Avatar"></button>
       </header>
 
       <!-- Topbar for Subpages -->
       <header class="topbar" id="subpage-topbar" style="display: none;">
         <div>
-          <p class="eyebrow">Dữ liệu thật · M'Vie Cake</p>
+          <p class="eyebrow" id="topbar-eyebrow">Quản trị vận hành · M'Vie Cake</p>
           <h1 id="topbar-title">Bảng order online</h1>
         </div>
         <div class="top-actions">
           <span class="live-dot">Đã lưu tự động</span>
-          <button class="primary compact" id="topbar-action-btn" onclick="handleTopbarAction()">＋ Thêm nhanh</button>
+          <button class="secondary compact" id="topbar-secondary-btn" style="display:none" onclick="handleTopbarSecondary()">👨‍🍳 Nướng bánh</button>
+          <button class="primary compact" id="topbar-action-btn" onclick="handleTopbarAction()">＋ Thêm mới</button>
         </div>
       </header>
 
-      <!-- Feedback notice -->
-      <div id="notice-msg" class="notice" style="display: none;" role="status"></div>
-
       <!-- VIEW: HOME (BAKERY GAME STAGE) -->
       <section id="view-home" class="game-dashboard" aria-label="Màn hình quản lý tiệm bánh dạng game">
+        <!-- Low Stock Alert Banner if any -->
+        <div id="home-low-stock-banner" class="low-stock-banner" style="display:none">
+          <div>
+            <strong>⚠️ Cảnh báo nguyên liệu sắp hết:</strong>
+            <span id="home-low-stock-names"></span>
+          </div>
+          <button class="btn-sm primary-sm" style="flex:0 0 auto" onclick="setView('warehouse')">Kiểm tra kho ngay ›</button>
+        </div>
+
         <div class="game-stage-card">
           <div class="game-stage activity-idle" id="gameStage">
             <img class="stage-art" src="game-bakery-stage-v2.png" alt="Tiệm bánh M’Vie Cake ba tầng" style="width: 100%; height: 100%; object-fit: cover;">
             
-            <button class="floor-hotspot top" onclick="setView('finance')">
+            <button class="floor-hotspot top" onclick="setView('finance')" title="Xem báo cáo lợi nhuận & sổ quỹ">
               <span>🧮</span>
               <b>Tầng 3<br>Kế Toán</b>
             </button>
-            <button class="floor-hotspot middle" onclick="openModal('produce')">
+            <button class="floor-hotspot middle" onclick="openModal('produce')" title="Nướng mẻ bánh mới & trừ kho">
               <span>👨‍🍳</span>
               <b>Tầng 2<br>Bếp Bánh</b>
             </button>
-            <button class="floor-hotspot ground" onclick="openModal('stock')">
+            <button class="floor-hotspot ground" onclick="setView('warehouse')" title="Xem tồn kho & nhập nguyên liệu">
               <span>📦</span>
-              <b>Tầng 1<br>Nhập Hàng</b>
+              <b>Tầng 1<br>Kho Hàng</b>
             </button>
 
             <img class="game-actor accountant" src="game-accountant-v2.png" alt="Nhân viên kế toán">
@@ -135,7 +477,7 @@
           <section class="game-summary">
             <header>
               <span>📊</span>
-              <h2>Tổng quan hôm nay</h2>
+              <h2>Trạng thái đơn hàng</h2>
               <i>✦</i>
             </header>
             <div>
@@ -151,12 +493,12 @@
               </button>
               <button onclick="filterOrders('ready')">
                 <span>🚚</span>
-                <small>Đang giao</small>
+                <small>Chờ giao</small>
                 <b id="summary-ready">0</b>
               </button>
               <button onclick="filterOrders('delivered')">
                 <span>✅</span>
-                <small>Hoàn thành</small>
+                <small>Đã giao</small>
                 <b id="summary-delivered">0</b>
               </button>
             </div>
@@ -164,57 +506,95 @@
 
           <section class="game-orders">
             <header>
-              <h2>📋 Đơn hàng mới</h2>
+              <h2>📋 Đơn hàng gần nhất</h2>
               <button onclick="setView('orders')">Xem tất cả ›</button>
             </header>
-            <div id="home-recent-orders">
-              <!-- Rendered via JS -->
-            </div>
-            <button class="create-order" onclick="openModal('order')">＋ Tạo đơn hàng</button>
+            <div id="home-recent-orders"></div>
+            <button class="create-order" onclick="openModal('order')">＋ Tạo đơn đặt bánh</button>
           </section>
         </aside>
 
         <div class="game-quest-bar">
           <div class="mascot-tip">
             <img src="mvie-logo.png" alt="Mascot M’Vie" width="58" height="58">
-            <span>Hôm nay<br>mình làm gì?</span>
+            <span>Thao tác<br>nhanh:</span>
           </div>
           <button class="quest stock" onclick="openModal('stock')">
             <span>📦</span>
-            <b>Nhập hàng</b>
+            <b>Nhập nguyên liệu</b>
           </button>
           <button class="quest bake" onclick="openModal('produce')">
             <span>👨‍🍳</span>
-            <b>Làm bánh</b>
+            <b>Ra lò mẻ bánh</b>
           </button>
-          <button class="quest deliver" onclick="setView('orders')">
-            <span>🚚</span>
-            <b>Giao đơn</b>
+          <button class="quest deliver" onclick="openModal('transaction')">
+            <span>💰</span>
+            <b>Ghi sổ thu chi</b>
           </button>
         </div>
       </section>
 
       <!-- VIEW: ORDERS -->
       <section id="view-orders" class="section top-section" style="display: none;">
-        <div class="status-tabs" role="group">
-          <button id="tab-all" class="active" onclick="setOrderTab('all')">Tất cả <span id="badge-all">0</span></button>
-          <button id="tab-new" onclick="setOrderTab('new')">Đơn mới <span id="badge-new">0</span></button>
-          <button id="tab-making" onclick="setOrderTab('making')">Đang làm <span id="badge-making">0</span></button>
-          <button id="tab-ready" onclick="setOrderTab('ready')">Chờ giao <span id="badge-ready">0</span></button>
-          <button id="tab-delivered" onclick="setOrderTab('delivered')">Đã giao <span id="badge-delivered">0</span></button>
-          <button id="tab-cancelled" onclick="setOrderTab('cancelled')">Đã hủy <span id="badge-cancelled">0</span></button>
+        <div class="filter-bar">
+          <div class="status-tabs" role="group" style="padding-bottom:0">
+            <button id="tab-all" aria-pressed="true" onclick="setOrderTab('all')">Tất cả <span id="badge-all">0</span></button>
+            <button id="tab-new" onclick="setOrderTab('new')">Đơn mới <span id="badge-new">0</span></button>
+            <button id="tab-making" onclick="setOrderTab('making')">Đang làm <span id="badge-making">0</span></button>
+            <button id="tab-ready" onclick="setOrderTab('ready')">Chờ giao <span id="badge-ready">0</span></button>
+            <button id="tab-delivered" onclick="setOrderTab('delivered')">Đã giao <span id="badge-delivered">0</span></button>
+            <button id="tab-cancelled" onclick="setOrderTab('cancelled')">Đã hủy <span id="badge-cancelled">0</span></button>
+          </div>
+          <div class="search-box">
+            <input type="search" id="order-search" placeholder="Tìm tên khách, SĐT, mã đơn..." oninput="renderOrders()">
+          </div>
         </div>
 
         <div class="panel order-panel">
           <div class="panel-head">
             <div>
-              <p class="eyebrow">Quest board</p>
+              <p class="eyebrow">Theo dõi tiến độ &amp; dòng tiền</p>
               <h2 id="orders-list-title">Đơn hàng</h2>
             </div>
-            <button class="primary" onclick="openModal('order')">＋ Đơn mới</button>
+            <button class="primary" onclick="openModal('order')">＋ Tạo đơn mới</button>
           </div>
-          <div class="order-list" id="orders-container">
-            <!-- Rendered by JS -->
+          <div class="order-list" id="orders-container"></div>
+        </div>
+      </section>
+
+      <!-- VIEW: WAREHOUSE & STOCK -->
+      <section id="view-warehouse" class="section top-section" style="display: none;">
+        <div class="summary-bar">
+          <div>
+            <p class="eyebrow">Quản lý kho tầng 1</p>
+            <h2>Tồn kho nguyên vật liệu &amp; Cảnh báo định mức</h2>
+            <p>Khi nướng bánh tại Bếp, nguyên liệu sẽ tự động trừ theo công thức (đã tính % hao hụt). Bấm <b>"＋ Nhập thêm"</b> trên từng thẻ để bổ sung hàng nhanh.</p>
+          </div>
+          <button class="primary" onclick="openModal('stock')">＋ Nhập nguyên liệu</button>
+        </div>
+
+        <div class="warehouse-grid" id="warehouse-grid-container"></div>
+
+        <div class="two-column">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Nhật ký tầng 1</p>
+                <h2>Lịch sử nhập kho gần đây</h2>
+              </div>
+            </div>
+            <div class="transaction-list" id="receipts-history-container"></div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Nhật ký tầng 2</p>
+                <h2>Các mẻ bánh vừa ra lò</h2>
+              </div>
+              <button class="secondary compact" onclick="openModal('produce')">👨‍🍳 Nướng mẻ mới</button>
+            </div>
+            <div class="transaction-list" id="productions-history-container"></div>
           </div>
         </div>
       </section>
@@ -223,15 +603,16 @@
       <section id="view-cost" class="section top-section" style="display: none;">
         <div class="summary-bar">
           <div>
-            <p class="eyebrow">Công thức chuẩn</p>
-            <h2>Tính đúng từng gram, ml và hao hụt</h2>
-            <p>Cost = nguyên liệu sau hao hụt + bao bì + nhân công + chi phí khác. Mua hàng không bị tính lần nữa trong lợi nhuận ròng.</p>
+            <p class="eyebrow">Định lượng &amp; Giá vốn chuẩn</p>
+            <h2>Tính đúng từng gram, ml, nhân công &amp; hao hụt</h2>
+            <p>Cost / bánh = (Nguyên liệu sau hao hụt + Bao bì + Nhân công + Chi phí khác) ÷ (1 − % Hao hụt mẻ) ÷ Số bánh thu được.</p>
           </div>
-          <button class="primary" onclick="openModal('recipe')">＋ Công thức</button>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="secondary" onclick="openModal('produce')">👨‍🍳 Nướng mẻ bánh</button>
+            <button class="primary" onclick="openModal('recipe')">＋ Tạo công thức</button>
+          </div>
         </div>
-        <div class="recipe-grid" id="recipes-container">
-          <!-- Rendered by JS -->
-        </div>
+        <div class="recipe-grid" id="recipes-container"></div>
       </section>
 
       <!-- VIEW: FINANCE & ACCOUNTING -->
@@ -240,42 +621,43 @@
           <label>Tháng báo cáo
             <input type="month" id="finance-month" onchange="renderFinance()">
           </label>
-          <div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="secondary" onclick="openModal('transaction')">＋ Ghi thu / chi</button>
-            <button class="primary" onclick="exportDataExcel()">⬇ Xuất Báo Cáo</button>
+            <button class="primary" onclick="exportDataExcel()">⬇ Xuất Excel 6 Sheet (.xlsx)</button>
           </div>
         </div>
 
         <div class="metric-grid">
-          <article class="metric"><span>DOANH THU</span><b id="fin-revenue">0 ₫</b><small>Đơn đã giao</small></article>
-          <article class="metric"><span>GIÁ VỐN</span><b id="fin-cogs">0 ₫</b><small>Cost bánh đã bán</small></article>
-          <article class="metric"><span>LỢI NHUẬN GỘP</span><b id="fin-gross">0 ₫</b><small>Doanh thu − giá vốn</small></article>
-          <article class="metric strong"><span>LỢI NHUẬN RÒNG</span><b id="fin-net">0 ₫</b><small>Không tính trùng tiền nhập</small></article>
+          <article class="metric"><span>DOANH THU THỰC</span><b id="fin-revenue">0 ₫</b><small id="fin-rev-note">Từ đơn đã giao</small></article>
+          <article class="metric"><span>GIÁ VỐN HÀNG BÁN</span><b id="fin-cogs">0 ₫</b><small>Cost bánh đã giao</small></article>
+          <article class="metric"><span>LỢI NHUẬN GỘP</span><b id="fin-gross">0 ₫</b><small id="fin-margin-note">Biên lãi gộp: 0%</small></article>
+          <article class="metric strong"><span>LỢI NHUẬN RÒNG</span><b id="fin-net">0 ₫</b><small>Đã trừ chi phí vận hành</small></article>
         </div>
 
         <div class="finance-layout">
           <div class="panel">
             <div class="panel-head">
-              <div><p class="eyebrow">Báo cáo kết quả</p><h2>Đúng logic kế toán quản trị</h2></div>
+              <div><p class="eyebrow">Báo cáo kết quả kinh doanh</p><h2>Chuẩn logic kế toán quản trị</h2></div>
             </div>
             <dl class="profit-table">
               <div><dt>Doanh thu đơn đã giao</dt><dd id="tbl-rev">0 ₫</dd></div>
-              <div><dt>− Giá vốn bánh đã bán</dt><dd id="tbl-cogs">0 ₫</dd></div>
+              <div><dt>− Giá vốn bánh đã bán (COGS)</dt><dd id="tbl-cogs">0 ₫</dd></div>
               <div class="subtotal"><dt>= Lợi nhuận gộp</dt><dd id="tbl-gross">0 ₫</dd></div>
-              <div><dt>+ Thu khác</dt><dd id="tbl-other">0 ₫</dd></div>
-              <div><dt>− Chi phí vận hành</dt><dd id="tbl-op">0 ₫</dd></div>
-              <div class="grand"><dt>= Lợi nhuận ròng</dt><dd id="tbl-net">0 ₫</dd></div>
+              <div><dt>+ Khoản thu khác</dt><dd id="tbl-other">0 ₫</dd></div>
+              <div><dt>− Chi phí vận hành (điện, lương, mặt bằng...)</dt><dd id="tbl-op">0 ₫</dd></div>
+              <div class="grand"><dt>= Lợi nhuận ròng trong tháng</dt><dd id="tbl-net">0 ₫</dd></div>
             </dl>
-            <p class="accounting-note">Tiền mua nguyên liệu chỉ hiện trong dòng tiền. Khi bánh bán ra, cost nguyên liệu mới đi vào giá vốn nên không bị trừ hai lần.</p>
+            <p class="accounting-note" id="fin-cashflow-note">
+              Tiền mua nguyên liệu chỉ ghi vào dòng tiền chi kho. Khi bánh được giao cho khách, giá vốn nguyên liệu mới kết chuyển vào COGS để không bao giờ bị trừ trùng 2 lần.
+            </p>
           </div>
 
           <div class="panel">
             <div class="panel-head">
-              <div><p class="eyebrow">Sổ thu chi</p><h2>Giao dịch gần đây</h2></div>
+              <div><p class="eyebrow">Sổ quỹ thu chi</p><h2>Giao dịch trong tháng</h2></div>
+              <button class="btn-sm" onclick="openModal('transaction')">＋ Ghi sổ</button>
             </div>
-            <div class="transaction-list" id="transactions-container">
-              <!-- Rendered by JS -->
-            </div>
+            <div class="transaction-list" id="transactions-container"></div>
           </div>
         </div>
       </section>
@@ -284,141 +666,173 @@
     <!-- Mobile Navigation -->
     <nav class="mobile-nav" aria-label="Điều hướng điện thoại">
       <button id="mnav-home" onclick="setView('home')"><span>🏠</span>Trang chủ</button>
-      <button onclick="openModal('stock')"><span>📦</span>Nhập hàng</button>
+      <button id="mnav-orders" onclick="setView('orders')"><span>📋</span>Đơn hàng</button>
+      <button id="mnav-warehouse" onclick="setView('warehouse')"><span>🏬</span>Kho tồn</button>
       <button onclick="openModal('produce')"><span>👨‍🍳</span>Làm bánh</button>
       <button id="mnav-cost" onclick="setView('cost')"><span>📖</span>Công thức</button>
-      <button id="mnav-orders" onclick="setView('orders')"><span>📋</span>Đơn hàng</button>
       <button id="mnav-finance" onclick="setView('finance')"><span>🧮</span>Kế toán</button>
     </nav>
 
-    <!-- Modals Container -->
-    <div class="modal-backdrop" id="modal-container" style="display: none;">
-      <section id="inline-form" class="modal" role="region">
+    <!-- Popup Modal Container -->
+    <div class="modal-backdrop" id="modal-container" style="display: none !important;" onclick="handleBackdropClick(event)">
+      <section id="inline-form" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <header>
           <div>
-            <p class="eyebrow">Điền thông tin bên dưới</p>
-            <h2 id="modal-title">Tiêu đề Modal</h2>
+            <p class="eyebrow" id="modal-eyebrow">Biểu mẫu thông minh</p>
+            <h2 id="modal-title">Tiêu đề</h2>
           </div>
-          <button onclick="closeModal()" aria-label="Đóng biểu mẫu">×</button>
+          <button type="button" onclick="closeModal()" aria-label="Đóng biểu mẫu">×</button>
         </header>
-        <div class="modal-body" id="modal-body-content">
-          <!-- Injected dynamically -->
-        </div>
+        <div class="modal-body" id="modal-body-content"></div>
       </section>
     </div>
+
+    <!-- Floating Toast Notification -->
+    <div id="toast-container" style="display:none" class="toast-notice" role="status"></div>
   </div>
 
   <script>
-    // --- LOCAL STORAGE DATA REPOSITORY ---
-    const STORAGE_KEY = 'MVIE_CAKE_DATA_V2';
+    // =========================================================================
+    // 1. KHO DỮ LIỆU & KHỞI TẠO MẶC ĐỊNH
+    // =========================================================================
+    const STORAGE_KEY = 'MVIE_CAKE_DATA_V3';
+    const LEGACY_KEY = 'MVIE_CAKE_DATA_V2';
+
+    function todayIso() { return new Date().toISOString().slice(0, 10); }
+    function curMonthIso() { return new Date().toISOString().slice(0, 7); }
 
     const defaultData = {
       ingredients: [
-        { id: "ing-1", name: "Bột mì số 8", unit: "g", quantity: 4500, packSize: 1000, purchasePrice: 22000, lossPercent: 2, alertAt: 500, supplier: "Đại lý Bột Mì Tân Bình" },
-        { id: "ing-2", name: "Bơ lạt Anchor", unit: "g", quantity: 1800, packSize: 1000, purchasePrice: 195000, lossPercent: 1, alertAt: 300, supplier: "Công ty Thực phẩm New Viet" },
-        { id: "ing-3", name: "Đường cát trắng", unit: "g", quantity: 8000, packSize: 1000, purchasePrice: 24000, lossPercent: 1, alertAt: 1000, supplier: "Bách Hóa Thuận An" },
-        { id: "ing-4", name: "Trứng gà tươi", unit: "cái", quantity: 85, packSize: 10, purchasePrice: 32000, lossPercent: 3, alertAt: 15, supplier: "Trang trại Ba Huân" },
-        { id: "ing-5", name: "Kem béo Whipping", unit: "ml", quantity: 3200, packSize: 1000, purchasePrice: 145000, lossPercent: 4, alertAt: 500, supplier: "Nhất Hương Bình Dương" }
+        { id: "ing-1", name: "Bột mì số 8 (Làm cốt bánh)", unit: "g", quantity: 4500, packSize: 1000, purchasePrice: 24000, lossPercent: 2, alertAt: 1000, supplier: "Đại lý Bột Mì Tân Bình" },
+        { id: "ing-2", name: "Bơ lạt Anchor New Zealand", unit: "g", quantity: 1800, packSize: 1000, purchasePrice: 195000, lossPercent: 1, alertAt: 400, supplier: "New Viet Dairy" },
+        { id: "ing-3", name: "Đường cát trắng Biên Hòa", unit: "g", quantity: 6500, packSize: 1000, purchasePrice: 24000, lossPercent: 1, alertAt: 1000, supplier: "Bách Hóa Thuận An" },
+        { id: "ing-4", name: "Trứng gà tươi Ba Huân", unit: "cái", quantity: 64, packSize: 10, purchasePrice: 32000, lossPercent: 3, alertAt: 20, supplier: "Trang trại Ba Huân" },
+        { id: "ing-5", name: "Kem béo Whipping Cream", unit: "ml", quantity: 3200, packSize: 1000, purchasePrice: 145000, lossPercent: 4, alertAt: 800, supplier: "Nhất Hương Bình Dương" },
+        { id: "ing-6", name: "Dâu tây Đà Lạt tươi", unit: "g", quantity: 450, packSize: 500, purchasePrice: 85000, lossPercent: 8, alertAt: 500, supplier: "Nông sản Đà Lạt" },
+        { id: "ing-7", name: "Sữa tươi thanh trùng", unit: "ml", quantity: 4000, packSize: 1000, purchasePrice: 36000, lossPercent: 1, alertAt: 1000, supplier: "Vinamilk Thuận An" }
       ],
       recipes: [
         {
           id: "rec-1",
-          name: "Bento Kem Dâu",
+          name: "Bento Kem Dâu Hàn Quốc",
           yieldCount: 4,
-          salePrice: 125000,
+          salePrice: 135000,
           laborCost: 40000,
-          packagingCost: 32000,
+          packagingCost: 28000,
           otherCost: 8000,
-          batchLossPercent: 5,
+          batchLossPercent: 4,
           finishedStock: 8,
           lines: [
-            { ingredientId: "ing-1", quantity: 250 },
-            { ingredientId: "ing-2", quantity: 120 },
-            { ingredientId: "ing-3", quantity: 150 },
+            { ingredientId: "ing-1", quantity: 240 },
+            { ingredientId: "ing-2", quantity: 100 },
+            { ingredientId: "ing-3", quantity: 140 },
             { ingredientId: "ing-4", quantity: 4 },
-            { ingredientId: "ing-5", quantity: 300 }
+            { ingredientId: "ing-5", quantity: 280 },
+            { ingredientId: "ing-6", quantity: 160 }
           ]
         },
         {
           id: "rec-2",
-          name: "Gato Flan Caramel",
+          name: "Gato Flan Caramel Trứng Sữa",
           yieldCount: 6,
-          salePrice: 160000,
-          laborCost: 60000,
+          salePrice: 165000,
+          laborCost: 55000,
           packagingCost: 36000,
           otherCost: 10000,
-          batchLossPercent: 4,
-          finishedStock: 5,
+          batchLossPercent: 3,
+          finishedStock: 6,
           lines: [
-            { ingredientId: "ing-1", quantity: 300 },
-            { ingredientId: "ing-3", quantity: 280 },
-            { ingredientId: "ing-4", quantity: 8 },
-            { ingredientId: "ing-5", quantity: 400 }
+            { ingredientId: "ing-1", quantity: 280 },
+            { ingredientId: "ing-3", quantity: 260 },
+            { ingredientId: "ing-4", quantity: 10 },
+            { ingredientId: "ing-5", quantity: 300 },
+            { ingredientId: "ing-7", quantity: 500 }
           ]
         },
         {
           id: "rec-3",
-          name: "Set Cupcake Hạnh Nhân",
-          yieldCount: 12,
-          salePrice: 180000,
-          laborCost: 50000,
-          packagingCost: 25000,
-          otherCost: 10000,
+          name: "Set 6 Cupcake Bơ Hạnh Nhân",
+          yieldCount: 8,
+          salePrice: 150000,
+          laborCost: 45000,
+          packagingCost: 32000,
+          otherCost: 8000,
           batchLossPercent: 3,
-          finishedStock: 12,
+          finishedStock: 10,
           lines: [
-            { ingredientId: "ing-1", quantity: 400 },
-            { ingredientId: "ing-2", quantity: 200 },
-            { ingredientId: "ing-3", quantity: 200 },
-            { ingredientId: "ing-4", quantity: 6 }
+            { ingredientId: "ing-1", quantity: 360 },
+            { ingredientId: "ing-2", quantity: 180 },
+            { ingredientId: "ing-3", quantity: 180 },
+            { ingredientId: "ing-4", quantity: 6 },
+            { ingredientId: "ing-5", quantity: 240 }
           ]
         }
       ],
       orders: [
         {
           id: "ord-1",
-          code: "MVC-0104",
-          customerName: "Chị Thảo (Thuận An)",
+          code: "MVC-1041",
+          customerName: "Chị Thảo (Lái Thiêu)",
           phone: "0908 123 456",
-          address: "125 Cách Mạng Tháng 8, P. Lái Thiêu",
+          address: "125 CMT8, P. Lái Thiêu, Thuận An",
           status: "delivered",
           paymentStatus: "paid",
-          items: [{ name: "Bento Kem Dâu", qty: 2 }],
-          total: 250000,
-          costOfGoods: 110000,
+          items: [{ recipeId: "rec-1", name: "Bento Kem Dâu Hàn Quốc", qty: 2, unitPrice: 135000, unitCost: 46500 }],
+          shippingFee: 15000,
+          discount: 0,
+          total: 285000,
+          costOfGoods: 93000,
+          note: "Ghi chữ: Happy Birthday Bé Na (màu hồng pastel)",
           orderedAt: new Date().toISOString()
         },
         {
           id: "ord-2",
-          code: "MVC-0105",
-          customerName: "Anh Minh",
+          code: "MVC-1042",
+          customerName: "Anh Minh (KDC Việt Sing)",
           phone: "0912 888 999",
-          address: "Giao tiệm lúc 16h",
+          address: "Đường D1, KDC Việt Sing, Thuận An",
           status: "making",
           paymentStatus: "partial",
-          items: [{ name: "Gato Flan Caramel", qty: 1 }],
-          total: 160000,
-          costOfGoods: 72000,
+          items: [
+            { recipeId: "rec-2", name: "Gato Flan Caramel Trứng Sữa", qty: 1, unitPrice: 165000, unitCost: 34200 },
+            { recipeId: "rec-3", name: "Set 6 Cupcake Bơ Hạnh Nhân", qty: 1, unitPrice: 150000, unitCost: 26800 }
+          ],
+          shippingFee: 20000,
+          discount: 15000,
+          total: 320000,
+          costOfGoods: 61000,
+          note: "Giao lúc 16h30 chiều nay, khách đã cọc 150k",
           orderedAt: new Date().toISOString()
         },
         {
           id: "ord-3",
-          code: "MVC-0106",
-          customerName: "Khách vãng lai",
-          phone: "",
-          address: "Mua mang đi",
+          code: "MVC-1043",
+          customerName: "Bạn Ngọc Lan",
+          phone: "0977 321 654",
+          address: "Khách ghé tiệm lấy",
           status: "new",
           paymentStatus: "unpaid",
-          items: [{ name: "Set Cupcake Hạnh Nhân", qty: 1 }],
-          total: 180000,
-          costOfGoods: 68000,
+          items: [{ recipeId: "rec-1", name: "Bento Kem Dâu Hàn Quốc", qty: 1, unitPrice: 135000, unitCost: 46500 }],
+          shippingFee: 0,
+          discount: 0,
+          total: 135000,
+          costOfGoods: 46500,
+          note: "Ít kem, nhiều dâu tươi",
           orderedAt: new Date().toISOString()
         }
       ],
+      receipts: [
+        { id: "rcp-1", ingredientId: "ing-5", ingredientName: "Kem béo Whipping Cream", quantity: 3000, unit: "ml", purchaseTotal: 435000, supplier: "Nhất Hương Bình Dương", receivedAt: new Date().toISOString() },
+        { id: "rcp-2", ingredientId: "ing-1", ingredientName: "Bột mì số 8 (Làm cốt bánh)", quantity: 5000, unit: "g", purchaseTotal: 120000, supplier: "Đại lý Bột Mì Tân Bình", receivedAt: new Date().toISOString() }
+      ],
+      productions: [
+        { id: "prd-1", recipeId: "rec-1", recipeName: "Bento Kem Dâu Hàn Quốc", batches: 2, quantityMade: 8, totalCostSnapshot: 372000, producedAt: new Date().toISOString() },
+        { id: "prd-2", recipeId: "rec-2", recipeName: "Gato Flan Caramel Trứng Sữa", batches: 1, quantityMade: 6, totalCostSnapshot: 205000, producedAt: new Date().toISOString() }
+      ],
       transactions: [
-        { id: "tx-1", direction: "income", accountingType: "operating", category: "Doanh thu bán bánh", amount: 250000, note: "Đơn MVC-0104 hoàn tất", occurredAt: new Date().toISOString() },
-        { id: "tx-2", direction: "expense", accountingType: "operating_expense", category: "Chi phí vận hành", amount: 150000, note: "Tiền điện lạnh bếp bánh", occurredAt: new Date().toISOString() },
-        { id: "tx-3", direction: "expense", accountingType: "inventory_purchase", category: "Nhập nguyên liệu", amount: 480000, note: "Mua kem béo & bột mì", occurredAt: new Date().toISOString() }
+        { id: "tx-1", direction: "expense", accountingType: "operating_expense", category: "Điện nước & Gas", amount: 180000, note: "Tiền điện tủ mát trưng bày bánh", occurredAt: new Date().toISOString() },
+        { id: "tx-2", direction: "expense", accountingType: "inventory_purchase", category: "Nhập nguyên liệu", amount: 435000, note: "Nhập 3000 ml Kem béo Whipping Cream", occurredAt: new Date().toISOString() },
+        { id: "tx-3", direction: "income", accountingType: "other_income", category: "Thu khác", amount: 65000, note: "Bán phụ kiện nến sinh nhật & pháo bông", occurredAt: new Date().toISOString() }
       ]
     };
 
@@ -426,12 +840,22 @@
 
     function loadData() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
+        const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          return {
+            ingredients: parsed.ingredients || defaultData.ingredients,
+            recipes: parsed.recipes || defaultData.recipes,
+            orders: parsed.orders || defaultData.orders,
+            receipts: parsed.receipts || defaultData.receipts,
+            productions: parsed.productions || defaultData.productions,
+            transactions: parsed.transactions || defaultData.transactions
+          };
+        }
       } catch (e) {
         console.error(e);
       }
-      return defaultData;
+      return JSON.parse(JSON.stringify(defaultData));
     }
 
     function saveData() {
@@ -442,38 +866,51 @@
       }
     }
 
-    // --- UTILITIES ---
+    // =========================================================================
+    // 2. HÀM TÍNH TOÁN NGHIỆP VỤ CHUẨN KẾ TOÁN
+    // =========================================================================
     const money = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
+    const numFmt = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 });
     const dateFormat = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
     const statusLabels = { new: "Đơn mới", making: "Đang làm", ready: "Chờ giao", delivered: "Đã giao", cancelled: "Đã hủy" };
     const paymentLabels = { unpaid: "Chưa thanh toán", partial: "Đã cọc", paid: "Đã thanh toán" };
 
+    function effectiveQuantity(quantity, lossPercent) {
+      return Number(quantity || 0) / Math.max(0.01, 1 - Number(lossPercent || 0) / 100);
+    }
+
+    function ingredientUnitCost(ing) {
+      return Number(ing.purchasePrice || 0) / Math.max(0.01, Number(ing.packSize || 1));
+    }
+
     function calculateRecipeCost(recipe) {
       let ingredientCost = 0;
-      if (recipe.lines) {
+      if (recipe && Array.isArray(recipe.lines)) {
         recipe.lines.forEach(line => {
           const ing = appData.ingredients.find(i => i.id === line.ingredientId);
-          if (ing && ing.packSize > 0) {
-            const unitPrice = ing.purchasePrice / ing.packSize;
-            const effQty = line.quantity / Math.max(0.01, 1 - (ing.lossPercent || 0) / 100);
-            ingredientCost += effQty * unitPrice;
+          if (ing) {
+            const effQty = effectiveQuantity(line.quantity, ing.lossPercent);
+            ingredientCost += effQty * ingredientUnitCost(ing);
           }
         });
       }
       const directCost = ingredientCost + Number(recipe.laborCost || 0) + Number(recipe.packagingCost || 0) + Number(recipe.otherCost || 0);
-      const batchCost = directCost / Math.max(0.01, 1 - (recipe.batchLossPercent || 0) / 100);
-      const unitCost = batchCost / Math.max(1, recipe.yieldCount || 1);
-      const grossProfitPerUnit = Number(recipe.salePrice) - unitCost;
-      return { ingredientCost, batchCost, unitCost, grossProfitPerUnit };
+      const batchCost = directCost / Math.max(0.01, 1 - Number(recipe.batchLossPercent || 0) / 100);
+      const unitCost = batchCost / Math.max(1, Number(recipe.yieldCount || 1));
+      const grossProfitPerUnit = Number(recipe.salePrice || 0) - unitCost;
+      const marginPercent = recipe.salePrice > 0 ? Math.round((grossProfitPerUnit / recipe.salePrice) * 100) : 0;
+      return { ingredientCost, batchCost, unitCost, grossProfitPerUnit, marginPercent };
     }
 
-    // --- NAVIGATION & VIEWS ---
+    // =========================================================================
+    // 3. ĐIỀU HƯỚNG & HIỂN THỊ GIAO DIỆN
+    // =========================================================================
     let currentView = 'home';
     let currentOrderFilter = 'all';
 
     function setView(view) {
       currentView = view;
-      ['home', 'orders', 'cost', 'finance'].forEach(v => {
+      ['home', 'orders', 'warehouse', 'cost', 'finance'].forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.style.display = v === view ? (v === 'home' ? 'grid' : 'block') : 'none';
         const navEl = document.getElementById(`nav-${v}`);
@@ -485,6 +922,8 @@
       const hud = document.getElementById('hud-container');
       const topbar = document.getElementById('subpage-topbar');
       const topbarTitle = document.getElementById('topbar-title');
+      const topbarActionBtn = document.getElementById('topbar-action-btn');
+      const topbarSecBtn = document.getElementById('topbar-secondary-btn');
 
       if (view === 'home') {
         hud.style.display = 'flex';
@@ -492,9 +931,22 @@
       } else {
         hud.style.display = 'none';
         topbar.style.display = 'flex';
-        if (view === 'orders') topbarTitle.textContent = 'Bảng order online';
-        if (view === 'cost') topbarTitle.textContent = 'Cost từng loại bánh';
-        if (view === 'finance') topbarTitle.textContent = 'Phòng kế toán tầng 3';
+        topbarSecBtn.style.display = 'none';
+        if (view === 'orders') {
+          topbarTitle.textContent = 'Bảng quản lý đơn hàng';
+          topbarActionBtn.textContent = '＋ Tạo đơn mới';
+        } else if (view === 'warehouse') {
+          topbarTitle.textContent = 'Kho nguyên vật liệu & Tồn kho';
+          topbarActionBtn.textContent = '＋ Nhập nguyên liệu';
+          topbarSecBtn.style.display = 'inline-flex';
+        } else if (view === 'cost') {
+          topbarTitle.textContent = 'Công thức & Giá vốn từng loại bánh';
+          topbarActionBtn.textContent = '＋ Công thức mới';
+          topbarSecBtn.style.display = 'inline-flex';
+        } else if (view === 'finance') {
+          topbarTitle.textContent = 'Phòng kế toán & Sổ quỹ tầng 3';
+          topbarActionBtn.textContent = '＋ Ghi thu / chi';
+        }
       }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -503,29 +955,37 @@
 
     function handleTopbarAction() {
       if (currentView === 'orders') openModal('order');
+      else if (currentView === 'warehouse') openModal('stock');
       else if (currentView === 'cost') openModal('recipe');
       else if (currentView === 'finance') openModal('transaction');
     }
 
+    function handleTopbarSecondary() {
+      openModal('produce');
+    }
+
+    let toastTimer = null;
     function showNotice(text, isError = false) {
-      const notice = document.getElementById('notice-msg');
-      notice.textContent = text;
-      notice.className = `notice ${isError ? 'error' : ''}`;
-      notice.style.display = 'block';
-      setTimeout(() => { notice.style.display = 'none'; }, 4000);
+      const toast = document.getElementById('toast-container');
+      toast.innerHTML = `<span>${isError ? '⚠️' : '✅'}</span> <span>${text}</span>`;
+      toast.className = `toast-notice ${isError ? 'error' : ''}`;
+      toast.style.display = 'flex';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
     }
 
     function triggerActivity(actName) {
       const stage = document.getElementById('gameStage');
+      if (!stage) return;
       stage.className = `game-stage activity-${actName}`;
       setTimeout(() => { stage.className = 'game-stage activity-idle'; }, 2600);
     }
 
-    // --- RENDER FUNCTIONS ---
     function renderCurrentView() {
       updateHUD();
       if (currentView === 'home') renderHome();
       else if (currentView === 'orders') renderOrders();
+      else if (currentView === 'warehouse') renderWarehouse();
       else if (currentView === 'cost') renderCost();
       else if (currentView === 'finance') renderFinance();
     }
@@ -534,17 +994,36 @@
       const now = new Date();
       document.getElementById('hud-current-date').textContent = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(now);
       
-      const todayIso = now.toISOString().slice(0, 10);
-      const todayOrders = appData.orders.filter(o => o.orderedAt && o.orderedAt.slice(0, 10) === todayIso);
+      const todayStr = todayIso();
+      const todayOrders = appData.orders.filter(o => o.orderedAt && o.orderedAt.slice(0, 10) === todayStr);
       document.getElementById('hud-today-orders').textContent = `Đơn hôm nay: ${todayOrders.length}`;
 
-      const totalDeliveredRev = appData.orders.filter(o => o.status === 'delivered').reduce((s, o) => s + (o.total || 0), 0);
-      document.getElementById('hud-revenue').textContent = money.format(totalDeliveredRev);
+      const curMonth = curMonthIso();
+      const monthDeliveredRev = appData.orders
+        .filter(o => o.status === 'delivered' && o.orderedAt.slice(0, 7) === curMonth)
+        .reduce((s, o) => s + Number(o.total || 0), 0);
+      document.getElementById('hud-revenue').textContent = `Doanh thu T${now.getMonth() + 1}: ${money.format(monthDeliveredRev)}`;
 
       const newOrders = appData.orders.filter(o => o.status === 'new').length;
-      document.getElementById('new-orders-count').textContent = newOrders || '';
+      const newBadge = document.getElementById('new-orders-count');
+      if (newOrders > 0) {
+        newBadge.textContent = newOrders;
+        newBadge.style.display = 'grid';
+      } else {
+        newBadge.style.display = 'none';
+      }
+
+      const lowStockItems = appData.ingredients.filter(i => Number(i.quantity) <= Number(i.alertAt));
+      const lowBadge = document.getElementById('low-stock-count');
+      if (lowStockItems.length > 0) {
+        lowBadge.textContent = lowStockItems.length;
+        lowBadge.style.display = 'grid';
+      } else {
+        lowBadge.style.display = 'none';
+      }
     }
 
+    // --- RENDER HOME ---
     function renderHome() {
       const newCount = appData.orders.filter(o => o.status === 'new').length;
       const makingCount = appData.orders.filter(o => o.status === 'making').length;
@@ -556,25 +1035,40 @@
       document.getElementById('summary-ready').textContent = readyCount;
       document.getElementById('summary-delivered').textContent = deliveredCount;
 
+      // Low stock alert banner
+      const lowStockItems = appData.ingredients.filter(i => Number(i.quantity) <= Number(i.alertAt));
+      const banner = document.getElementById('home-low-stock-banner');
+      if (lowStockItems.length > 0) {
+        banner.style.display = 'flex';
+        document.getElementById('home-low-stock-names').textContent = lowStockItems.map(i => `${i.name} (còn ${numFmt.format(i.quantity)}${i.unit})`).join(', ');
+      } else {
+        banner.style.display = 'none';
+      }
+
       const recentContainer = document.getElementById('home-recent-orders');
       recentContainer.innerHTML = '';
-      appData.orders.slice(0, 4).forEach(order => {
-        const btn = document.createElement('button');
-        btn.className = 'game-order';
-        btn.onclick = () => setView('orders');
-        btn.innerHTML = `
-          <span class="order-cake">🧁</span>
-          <span>
-            <b>${order.code}</b>
-            <small>${order.items.map(x => `${x.qty} ${x.name}`).join(', ')}</small>
-          </span>
-          <i class="${order.status}">${statusLabels[order.status] || order.status}</i>
-          <strong>›</strong>
-        `;
-        recentContainer.appendChild(btn);
-      });
+      if (appData.orders.length === 0) {
+        recentContainer.innerHTML = `<div class="empty" style="min-height:90px;padding:14px"><p>Chưa có đơn hàng nào.</p></div>`;
+      } else {
+        appData.orders.slice(0, 4).forEach(order => {
+          const btn = document.createElement('button');
+          btn.className = 'game-order';
+          btn.onclick = () => { setView('orders'); };
+          btn.innerHTML = `
+            <span class="order-cake">🧁</span>
+            <span>
+              <b>${order.code} · ${order.customerName}</b>
+              <small>${order.items.map(x => `${x.qty} ${x.name}`).join(', ')}</small>
+            </span>
+            <i class="${order.status}">${statusLabels[order.status] || order.status}</i>
+            <strong>›</strong>
+          `;
+          recentContainer.appendChild(btn);
+        });
+      }
     }
 
+    // --- RENDER ORDERS ---
     function filterOrders(status) {
       setView('orders');
       setOrderTab(status);
@@ -584,7 +1078,7 @@
       currentOrderFilter = status;
       ['all', 'new', 'making', 'ready', 'delivered', 'cancelled'].forEach(s => {
         const tab = document.getElementById(`tab-${s}`);
-        if (tab) tab.className = s === status ? 'active' : '';
+        if (tab) tab.setAttribute('aria-pressed', s === status ? 'true' : 'false');
       });
       renderOrders();
     }
@@ -597,20 +1091,31 @@
         }
       });
 
-      const filtered = currentOrderFilter === 'all' 
-        ? appData.orders 
-        : appData.orders.filter(o => o.status === currentOrderFilter);
+      const q = (document.getElementById('order-search')?.value || '').trim().toLowerCase();
+      const filtered = appData.orders.filter(o => {
+        const matchTab = currentOrderFilter === 'all' || o.status === currentOrderFilter;
+        if (!matchTab) return false;
+        if (!q) return true;
+        return (
+          (o.code || '').toLowerCase().includes(q) ||
+          (o.customerName || '').toLowerCase().includes(q) ||
+          (o.phone || '').toLowerCase().includes(q) ||
+          (o.address || '').toLowerCase().includes(q) ||
+          o.items.some(i => (i.name || '').toLowerCase().includes(q))
+        );
+      });
 
       document.getElementById('orders-list-title').textContent = `${filtered.length} đơn hàng`;
       const container = document.getElementById('orders-container');
       container.innerHTML = '';
 
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty"><span>🍰</span><p>Chưa có đơn hàng nào ở trạng thái này.</p></div>`;
+        container.innerHTML = `<div class="empty"><span>🍰</span><p>Không tìm thấy đơn hàng nào phù hợp.</p></div>`;
         return;
       }
 
       filtered.forEach(order => {
+        const profit = Number(order.total || 0) - Number(order.costOfGoods || 0);
         const card = document.createElement('article');
         card.className = 'order-card';
         card.innerHTML = `
@@ -620,13 +1125,18 @@
               <span>${dateFormat.format(new Date(order.orderedAt))}</span>
             </div>
             <div>
-              <h3>${order.customerName}</h3>
-              <p>${order.items.map(x => `${x.qty} × ${x.name}`).join(', ')}</p>
-              <small>${order.phone || 'Chưa có SĐT'} · ${order.address || 'Nhận tại tiệm'}</small>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <h3>${order.customerName}</h3>
+                <button class="btn-sm danger-sm" style="min-height:24px;padding:2px 7px;font-size:0.68rem" onclick="deleteOrder('${order.id}')" title="Xóa đơn này">Xóa</button>
+              </div>
+              <p style="font-weight:700;color:#17354d">${order.items.map(x => `${x.qty} × ${x.name}`).join(' + ')}</p>
+              <small>📞 ${order.phone || 'Chưa có SĐT'} · 📍 ${order.address || 'Nhận tại tiệm'}</small>
+              ${(order.shippingFee || order.discount) ? `<small style="display:block;color:#4b7896;margin-top:2px">Ship: +${money.format(order.shippingFee || 0)} · Giảm giá: −${money.format(order.discount || 0)} · Lãi gộp đơn: <b style="color:#22784b">${money.format(profit)}</b></small>` : `<small style="display:block;color:#4b7896;margin-top:2px">Giá vốn: ${money.format(order.costOfGoods || 0)} · Lãi gộp đơn: <b style="color:#22784b">${money.format(profit)}</b></small>`}
+              ${order.note ? `<span class="order-note-tag">📝 ${order.note}</span>` : ''}
             </div>
           </div>
           <div class="order-controls">
-            <label>Trạng thái
+            <label>Trạng thái đơn
               <select onchange="updateOrderStatus('${order.id}', this.value)">
                 ${Object.entries(statusLabels).map(([id, label]) => `
                   <option value="${id}" ${order.status === id ? 'selected' : ''}>${label}</option>
@@ -640,23 +1150,37 @@
                 `).join('')}
               </select>
             </label>
-            <strong>${money.format(order.total)}</strong>
+            <strong style="font-size:1.1rem;color:#17354d">${money.format(order.total)}</strong>
           </div>
         `;
         container.appendChild(card);
       });
     }
 
-    function updateOrderStatus(orderId, status) {
+    function updateOrderStatus(orderId, nextStatus) {
       const order = appData.orders.find(o => o.id === orderId);
-      if (order) {
-        order.status = status;
-        saveData();
-        renderOrders();
-        updateHUD();
-        triggerActivity(status === 'making' ? 'bake' : 'office');
-        showNotice(`Đã chuyển đơn ${order.code} sang: ${statusLabels[status]}`);
+      if (!order) return;
+      const prevStatus = order.status;
+
+      // Hoàn lại bánh vào kho thành phẩm nếu chuyển sang Đã hủy
+      if (nextStatus === 'cancelled' && prevStatus !== 'cancelled') {
+        order.items.forEach(item => {
+          const rec = appData.recipes.find(r => r.id === item.recipeId || r.name === item.name);
+          if (rec) rec.finishedStock = Number(rec.finishedStock || 0) + Number(item.qty || 0);
+        });
+      } else if (prevStatus === 'cancelled' && nextStatus !== 'cancelled') {
+        order.items.forEach(item => {
+          const rec = appData.recipes.find(r => r.id === item.recipeId || r.name === item.name);
+          if (rec) rec.finishedStock = Math.max(0, Number(rec.finishedStock || 0) - Number(item.qty || 0));
+        });
       }
+
+      order.status = nextStatus;
+      saveData();
+      renderOrders();
+      updateHUD();
+      triggerActivity(nextStatus === 'making' ? 'bake' : 'office');
+      showNotice(`Đơn ${order.code}: Đã chuyển trạng thái sang "${statusLabels[nextStatus]}"`);
     }
 
     function updateOrderPayment(orderId, paymentStatus) {
@@ -665,81 +1189,228 @@
         order.paymentStatus = paymentStatus;
         saveData();
         renderOrders();
-        showNotice(`Đã cập nhật thanh toán đơn ${order.code}: ${paymentLabels[paymentStatus]}`);
+        showNotice(`Đơn ${order.code}: Cập nhật thanh toán "${paymentLabels[paymentStatus]}"`);
       }
     }
 
+    function deleteOrder(orderId) {
+      const order = appData.orders.find(o => o.id === orderId);
+      if (!order) return;
+      if (!confirm(`Bạn có chắc muốn xóa đơn hàng ${order.code} của "${order.customerName}" không?`)) return;
+      appData.orders = appData.orders.filter(o => o.id !== orderId);
+      saveData();
+      renderOrders();
+      updateHUD();
+      showNotice(`Đã xóa đơn hàng ${order.code}.`);
+    }
+
+    // --- RENDER WAREHOUSE (KHO & TỒN) ---
+    function renderWarehouse() {
+      const grid = document.getElementById('warehouse-grid-container');
+      grid.innerHTML = '';
+
+      if (appData.ingredients.length === 0) {
+        grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><span>📦</span><p>Kho đang trống. Hãy nhập nguyên liệu đầu tiên!</p></div>`;
+      } else {
+        appData.ingredients.forEach(ing => {
+          const isLow = Number(ing.quantity) <= Number(ing.alertAt);
+          const ratio = Math.min(100, Math.round((Number(ing.quantity) / Math.max(1, Number(ing.alertAt) * 3)) * 100));
+          const unitCost = ingredientUnitCost(ing);
+
+          const card = document.createElement('article');
+          card.className = `stock-card ${isLow ? 'low-stock' : ''}`;
+          card.innerHTML = `
+            <div>
+              <div class="stock-head">
+                <div>
+                  <h3>${ing.name}</h3>
+                  <small style="color:#4b7896;font-weight:700">${ing.supplier || 'Chưa ghi nhà cung cấp'}</small>
+                </div>
+                <span class="stock-badge ${isLow ? 'low' : ''}">${isLow ? '⚠️ Sắp hết' : '✓ Đủ dùng'}</span>
+              </div>
+              <div style="margin:12px 0 6px;display:flex;justify-content:space-between;align-items:baseline">
+                <strong style="font-size:1.35rem;color:${isLow ? '#9e2a47' : '#17354d'}">${numFmt.format(ing.quantity)} ${ing.unit}</strong>
+                <small style="color:#4b7896;font-weight:700">Báo động khi ≤ ${numFmt.format(ing.alertAt)} ${ing.unit}</small>
+              </div>
+              <div class="stock-progress">
+                <div class="stock-progress-bar" style="width:${ratio}%"></div>
+              </div>
+            </div>
+
+            <div class="stock-meta">
+              <div>
+                <span>Giá mua quy cách</span>
+                <b>${money.format(ing.purchasePrice)} / ${numFmt.format(ing.packSize)}${ing.unit}</b>
+              </div>
+              <div>
+                <span>Đơn giá &amp; Hao hụt</span>
+                <b>${money.format(unitCost)}/${ing.unit} (${ing.lossPercent || 0}% hao)</b>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <button class="btn-sm primary-sm" onclick="openModal('stock', '${ing.id}')">＋ Nhập thêm</button>
+              <button class="btn-sm" onclick="openEditIngredientModal('${ing.id}')">✏️ Sửa</button>
+              <button class="btn-sm danger-sm" onclick="deleteIngredient('${ing.id}')" title="Xóa nguyên liệu">🗑️</button>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+
+      // Render Receipts History
+      const rcpContainer = document.getElementById('receipts-history-container');
+      rcpContainer.innerHTML = '';
+      if (!appData.receipts || appData.receipts.length === 0) {
+        rcpContainer.innerHTML = `<div class="empty"><p>Chưa có lịch sử nhập kho.</p></div>`;
+      } else {
+        appData.receipts.slice(0, 8).forEach(rcp => {
+          const row = document.createElement('div');
+          row.innerHTML = `
+            <span class="income"><i>📦</i></span>
+            <div>
+              <b>+${numFmt.format(rcp.quantity)} ${rcp.unit} ${rcp.ingredientName}</b>
+              <small>${dateFormat.format(new Date(rcp.receivedAt))} ${rcp.supplier ? '· ' + rcp.supplier : ''}</small>
+            </div>
+            <strong class="expense">−${money.format(rcp.purchaseTotal)}</strong>
+          `;
+          rcpContainer.appendChild(row);
+        });
+      }
+
+      // Render Productions History
+      const prdContainer = document.getElementById('productions-history-container');
+      prdContainer.innerHTML = '';
+      if (!appData.productions || appData.productions.length === 0) {
+        prdContainer.innerHTML = `<div class="empty"><p>Chưa có mẻ bánh nào ra lò.</p></div>`;
+      } else {
+        appData.productions.slice(0, 8).forEach(prd => {
+          const row = document.createElement('div');
+          row.innerHTML = `
+            <span class="income"><i>🧁</i></span>
+            <div>
+              <b>Ra lò +${prd.quantityMade} ${prd.recipeName} (${prd.batches || 1} mẻ)</b>
+              <small>${dateFormat.format(new Date(prd.producedAt))}</small>
+            </div>
+            <strong style="color:#17354d">Cost: ${money.format(prd.totalCostSnapshot)}</strong>
+          `;
+          prdContainer.appendChild(row);
+        });
+      }
+    }
+
+    function deleteIngredient(ingId) {
+      const ing = appData.ingredients.find(i => i.id === ingId);
+      if (!ing) return;
+      if (!confirm(`Xóa nguyên liệu "${ing.name}" khỏi kho?`)) return;
+      appData.ingredients = appData.ingredients.filter(i => i.id !== ingId);
+      saveData();
+      renderWarehouse();
+      updateHUD();
+      showNotice(`Đã xóa nguyên liệu "${ing.name}".`);
+    }
+
+    // --- RENDER COST & RECIPES ---
     function renderCost() {
       const container = document.getElementById('recipes-container');
       container.innerHTML = '';
 
       if (appData.recipes.length === 0) {
-        container.innerHTML = `<div class="empty"><span>🧁</span><p>Hãy tạo công thức đầu tiên cho tiệm.</p></div>`;
+        container.innerHTML = `<div class="empty" style="grid-column:1/-1"><span>🧁</span><p>Hãy tạo công thức bánh đầu tiên cho tiệm.</p></div>`;
         return;
       }
 
       appData.recipes.forEach(recipe => {
         const cost = calculateRecipeCost(recipe);
+        const ingPills = (recipe.lines || []).map(l => {
+          const ing = appData.ingredients.find(i => i.id === l.ingredientId);
+          return ing ? `<span class="recipe-ing-pill">${ing.name}: ${numFmt.format(l.quantity)}${ing.unit}</span>` : '';
+        }).join('');
+
         const card = document.createElement('article');
         card.className = 'recipe-card';
         card.innerHTML = `
-          <div class="cake-icon">🧁</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div class="cake-icon" style="margin-bottom:0">🧁</div>
+            <div style="display:flex;gap:6px">
+              <button class="btn-sm" onclick="openModal('recipe', '${recipe.id}')">✏️ Sửa</button>
+              <button class="btn-sm danger-sm" onclick="deleteRecipe('${recipe.id}')">🗑️</button>
+            </div>
+          </div>
           <div class="recipe-title">
             <div>
               <h3>${recipe.name}</h3>
-              <span>Còn ${recipe.finishedStock || 0} bánh tồn</span>
+              <span>Thu được ${recipe.yieldCount} bánh/mẻ · Có sẵn: <b style="color:#22784b">${recipe.finishedStock || 0} bánh</b></span>
             </div>
-            <b>${money.format(recipe.salePrice)}</b>
+            <b style="font-size:1.15rem;color:#b74d69">${money.format(recipe.salePrice)}</b>
           </div>
+
+          <div class="recipe-ing-list">${ingPills || '<span class="recipe-ing-pill">Chưa gắn nguyên liệu</span>'}</div>
+
           <dl>
             <div>
-              <dt>Nguyên liệu / mẻ</dt>
+              <dt>Nguyên liệu / mẻ (${recipe. yieldCount} bánh)</dt>
               <dd>${money.format(cost.ingredientCost)}</dd>
             </div>
             <div>
-              <dt>Bao bì + nhân công + khác</dt>
+              <dt>Nhân công + Bao bì + Khác / mẻ</dt>
               <dd>${money.format((recipe.packagingCost || 0) + (recipe.laborCost || 0) + (recipe.otherCost || 0))}</dd>
             </div>
+            <div>
+              <dt>Tổng chi phí 1 mẻ (gồm ${recipe.batchLossPercent || 0}% hao hụt)</dt>
+              <dd>${money.format(cost.batchCost)}</dd>
+            </div>
             <div class="cost-total">
-              <dt>Cost / bánh</dt>
-              <dd>${money.format(cost.unitCost)}</dd>
+              <dt><strong>Giá vốn (Cost) / 1 bánh</strong></dt>
+              <dd style="font-size:1rem">${money.format(cost.unitCost)}</dd>
             </div>
             <div>
-              <dt>Lãi gộp dự kiến</dt>
-              <dd class="positive">${money.format(cost.grossProfitPerUnit)}</dd>
+              <dt>Lãi gộp / 1 bánh (Biên lãi)</dt>
+              <dd class="positive">${money.format(cost.grossProfitPerUnit)} (${cost.marginPercent}%)</dd>
             </div>
           </dl>
-          <button class="secondary full" onclick="openProduceFor('${recipe.id}')">Sản xuất mẻ mới</button>
+          <button class="primary full" onclick="openModal('produce', '${recipe.id}')">👨‍🍳 Nướng mẻ mới (+${recipe.yieldCount} bánh)</button>
         `;
         container.appendChild(card);
       });
     }
 
-    function openProduceFor(recipeId) {
-      openModal('produce', recipeId);
+    function deleteRecipe(recipeId) {
+      const rec = appData.recipes.find(r => r.id === recipeId);
+      if (!rec) return;
+      if (!confirm(`Bạn có chắc muốn xóa công thức "${rec.name}" không?`)) return;
+      appData.recipes = appData.recipes.filter(r => r.id !== recipeId);
+      saveData();
+      renderCost();
+      showNotice(`Đã xóa công thức "${rec.name}".`);
     }
 
+    // --- RENDER FINANCE ---
     function renderFinance() {
       const monthInput = document.getElementById('finance-month');
       if (!monthInput.value) {
-        monthInput.value = new Date().toISOString().slice(0, 7);
+        monthInput.value = curMonthIso();
       }
       const curMonth = monthInput.value;
 
       const delivered = appData.orders.filter(o => o.status === 'delivered' && o.orderedAt.slice(0, 7) === curMonth);
       const txs = appData.transactions.filter(t => t.occurredAt.slice(0, 7) === curMonth);
 
-      const revenue = delivered.reduce((s, o) => s + (o.total || 0), 0);
-      const cogs = delivered.reduce((s, o) => s + (o.costOfGoods || 0), 0);
+      const revenue = delivered.reduce((s, o) => s + Number(o.total || 0), 0);
+      const cogs = delivered.reduce((s, o) => s + Number(o.costOfGoods || 0), 0);
       const gross = revenue - cogs;
+      const marginPct = revenue > 0 ? Math.round((gross / revenue) * 100) : 0;
 
-      const otherIncome = txs.filter(t => t.accountingType === 'other_income').reduce((s, t) => s + t.amount, 0);
-      const operating = txs.filter(t => t.accountingType === 'operating_expense').reduce((s, t) => s + t.amount, 0);
+      const otherIncome = txs.filter(t => t.accountingType === 'other_income').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const operating = txs.filter(t => t.accountingType === 'operating_expense').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const purchase = txs.filter(t => t.accountingType === 'inventory_purchase').reduce((s, t) => s + Number(t.amount || 0), 0);
       const net = gross + otherIncome - operating;
 
       document.getElementById('fin-revenue').textContent = money.format(revenue);
+      document.getElementById('fin-rev-note').textContent = `Từ ${delivered.length} đơn đã giao`;
       document.getElementById('fin-cogs').textContent = money.format(cogs);
       document.getElementById('fin-gross').textContent = money.format(gross);
+      document.getElementById('fin-margin-note').textContent = `Biên lãi gộp: ${marginPct}%`;
       document.getElementById('fin-net').textContent = money.format(net);
 
       document.getElementById('tbl-rev').textContent = money.format(revenue);
@@ -749,10 +1420,14 @@
       document.getElementById('tbl-op').textContent = money.format(operating);
       document.getElementById('tbl-net').textContent = money.format(net);
 
+      document.getElementById('fin-cashflow-note').innerHTML = `
+        💡 <b>Dòng tiền mua nguyên liệu tháng này (${money.format(purchase)})</b> được ghi nhận riêng ở sổ nhập kho. Khi bánh giao thành công, giá vốn nguyên liệu (${money.format(cogs)}) mới trừ vào lợi nhuận để đảm bảo không bị tính trùng hai lần.
+      `;
+
       const txContainer = document.getElementById('transactions-container');
       txContainer.innerHTML = '';
       if (txs.length === 0) {
-        txContainer.innerHTML = `<div class="empty"><p>Chưa có giao dịch thu chi trong tháng này.</p></div>`;
+        txContainer.innerHTML = `<div class="empty"><p>Chưa có giao dịch thu chi trong tháng ${curMonth}.</p></div>`;
       } else {
         txs.forEach(item => {
           const row = document.createElement('div');
@@ -760,337 +1435,1095 @@
             <span class="${item.direction}"><i>${item.direction === 'income' ? '↗' : '↘'}</i></span>
             <div>
               <b>${item.category}</b>
-              <small>${item.note || dateFormat.format(new Date(item.occurredAt))}</small>
+              <small>${dateFormat.format(new Date(item.occurredAt))} ${item.note ? '· ' + item.note : ''}</small>
             </div>
-            <strong class="${item.direction}">${item.direction === 'income' ? '+' : '−'}${money.format(item.amount)}</strong>
+            <div style="display:flex;align-items:center;gap:8px">
+              <strong class="${item.direction}">${item.direction === 'income' ? '+' : '−'}${money.format(item.amount)}</strong>
+              <button class="btn-sm danger-sm" style="min-height:24px;padding:2px 6px;font-size:0.65rem" onclick="deleteTransaction('${item.id}')" title="Xóa giao dịch">×</button>
+            </div>
           `;
           txContainer.appendChild(row);
         });
       }
     }
 
-    function exportDataExcel() {
-      let csv = "Mã,Ngày,Khách Hàng,Loại Bánh,Tổng Tiền,Trạng Thái,Thanh Toán\n";
-      appData.orders.forEach(o => {
-        csv += `"${o.code}","${o.orderedAt.slice(0,10)}","${o.customerName}","${o.items.map(i=>i.name).join(', ')}",${o.total},"${statusLabels[o.status] || o.status}","${paymentLabels[o.paymentStatus] || o.paymentStatus}"\n`;
-      });
-      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `MVie_Cake_Bao_Cao_${new Date().toISOString().slice(0,7)}.csv`;
-      link.click();
-      URL.revokeObjectURL(url);
-      triggerActivity('office');
-      showNotice("Đã tải xuống file báo cáo tiệm bánh thành công!");
+    function deleteTransaction(txId) {
+      if (!confirm('Xóa dòng giao dịch thu/chi này khỏi sổ quỹ?')) return;
+      appData.transactions = appData.transactions.filter(t => t.id !== txId);
+      saveData();
+      renderFinance();
+      showNotice('Đã xóa giao dịch khỏi sổ quỹ.');
     }
 
-    // --- MODALS & FORMS ---
+    // =========================================================================
+    // 4. BỘ XUẤT FILE EXCEL (.XLSX) 6 SHEET CHUẨN TRỰC TIẾP TRÊN TRÌNH DUYỆT
+    // =========================================================================
+    const xlsxEncoder = new TextEncoder();
+    function xmlEscape(val) {
+      return String(val ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[ch]);
+    }
+    function colName(idx) {
+      let v = idx + 1, res = "";
+      while (v) { v -= 1; res = String.fromCharCode(65 + (v % 26)) + res; v = Math.floor(v / 26); }
+      return res;
+    }
+    function buildWorksheet(rows) {
+      const content = rows.map((row, rIdx) => `<row r="${rIdx + 1}">${row.map((cell, cIdx) => {
+        const ref = `${colName(cIdx)}${rIdx + 1}`;
+        if (typeof cell === "number" && Number.isFinite(cell)) return `<c r="${ref}"><v>${Math.round(cell)}</v></c>`;
+        return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEscape(cell)}</t></is></c>`;
+      }).join("")}</row>`).join("");
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"/></sheetViews><sheetFormatPr defaultRowHeight="18"/><sheetData>${content}</sheetData></worksheet>`;
+    }
+    function crc32(bytes) {
+      let crc = 0xffffffff;
+      for (const b of bytes) {
+        crc ^= b;
+        for (let i = 0; i < 8; i++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+      }
+      return (crc ^ 0xffffffff) >>> 0;
+    }
+    function u16(v) { const o = new Uint8Array(2); new DataView(o.buffer).setUint16(0, v, true); return o; }
+    function u32(v) { const o = new Uint8Array(4); new DataView(o.buffer).setUint32(0, v, true); return o; }
+    function concatBytes(parts) {
+      const len = parts.reduce((s, p) => s + p.length, 0);
+      const out = new Uint8Array(len);
+      let off = 0;
+      for (const p of parts) { out.set(p, off); off += p.length; }
+      return out;
+    }
+    function buildZip(files) {
+      const locals = [], centrals = [];
+      let offset = 0;
+      for (const f of files) {
+        const name = xlsxEncoder.encode(f.name);
+        const data = xlsxEncoder.encode(f.data);
+        const crc = crc32(data);
+        const local = concatBytes([u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), name, data]);
+        const central = concatBytes([u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset), name]);
+        locals.push(local); centrals.push(central); offset += local.length;
+      }
+      const cBytes = concatBytes(centrals);
+      const end = concatBytes([u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cBytes.length), u32(offset), u16(0)]);
+      return concatBytes([...locals, cBytes, end]);
+    }
+    function createXlsxArchive(sheets) {
+      const safe = sheets.map(s => ({ ...s, name: s.name.slice(0, 31) }));
+      const ct = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${safe.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`;
+      const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+      const wb = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${safe.map((s, i) => `<sheet name="${xmlEscape(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("")}</sheets></workbook>`;
+      const wbRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${safe.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join("")}<Relationship Id="rId${safe.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+      const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Arial"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="1"><xf xfId="0"/></cellXfs></styleSheet>`;
+      return buildZip([
+        { name: "[Content_Types].xml", data: ct },
+        { name: "_rels/.rels", data: rels },
+        { name: "xl/workbook.xml", data: wb },
+        { name: "xl/_rels/workbook.xml.rels", data: wbRels },
+        { name: "xl/styles.xml", data: styles },
+        ...safe.map((s, i) => ({ name: `xl/worksheets/sheet${i + 1}.xml`, data: buildWorksheet(s.rows) }))
+      ]);
+    }
+
+    function exportDataExcel() {
+      const month = document.getElementById('finance-month')?.value || curMonthIso();
+      const inMonth = val => (val || '').slice(0, 7) === month;
+      const delivered = appData.orders.filter(o => o.status === 'delivered' && inMonth(o.orderedAt));
+      const tx = appData.transactions.filter(t => inMonth(t.occurredAt));
+
+      const revenue = delivered.reduce((s, o) => s + Number(o.total || 0), 0);
+      const cogs = delivered.reduce((s, o) => s + Number(o.costOfGoods || 0), 0);
+      const otherIncome = tx.filter(t => t.accountingType === 'other_income').reduce((s, t) => s + Number(t.amount || 0), 0);
+      const operating = tx.filter(t => t.accountingType === 'operating_expense').reduce((s, t) => s + Number(t.amount || 0), 0);
+
+      const bytes = createXlsxArchive([
+        {
+          name: "Tổng quan",
+          rows: [
+            ["M’VIE CAKE — BÁO CÁO KẾT QUẢ KINH DOANH", month],
+            ["Chỉ tiêu", "Số tiền (VND)"],
+            ["Doanh thu đơn đã giao", revenue],
+            ["Giá vốn bánh đã bán (COGS)", cogs],
+            ["Lợi nhuận gộp", revenue - cogs],
+            ["Thu khác", otherIncome],
+            ["Chi phí vận hành", operating],
+            ["Lợi nhuận ròng", revenue - cogs + otherIncome - operating],
+            [],
+            ["Ghi chú", "Tiền mua nguyên liệu nằm trong dòng tiền; giá vốn chỉ ghi nhận khi bánh bán ra để tránh tính trùng."]
+          ]
+        },
+        {
+          name: "Thu chi",
+          rows: [
+            ["Ngày", "Loại", "Nhóm", "Phân loại kế toán", "Số tiền (VND)", "Nội dung"],
+            ...tx.map(t => [t.occurredAt.slice(0, 10), t.direction === "income" ? "Thu" : "Chi", t.category, t.accountingType, Number(t.amount), t.note || ""])
+          ]
+        },
+        {
+          name: "Cost",
+          rows: [
+            ["Tên bánh", "Số bánh/mẻ", "Nguyên liệu/mẻ", "Nhân công", "Bao bì", "Chi phí khác", "Hao hụt mẻ (%)", "Giá vốn/bánh", "Giá bán/bánh", "Lãi gộp/bánh", "Tồn thành phẩm"],
+            ...appData.recipes.map(r => {
+              const c = calculateRecipeCost(r);
+              return [r.name, r.yieldCount, c.ingredientCost, r.laborCost, r.packagingCost, r.otherCost, r.batchLossPercent, c.unitCost, r.salePrice, c.grossProfitPerUnit, r.finishedStock || 0];
+            })
+          ]
+        },
+        {
+          name: "Đơn hàng",
+          rows: [
+            ["Mã đơn", "Ngày", "Khách hàng", "SĐT", "Địa chỉ", "Trạng thái", "Thanh toán", "Chi tiết món", "Doanh thu", "Giá vốn", "Lãi gộp", "Ghi chú"],
+            ...appData.orders.map(o => [
+              o.code, o.orderedAt.slice(0, 10), o.customerName, o.phone || "", o.address || "",
+              statusLabels[o.status] || o.status, paymentLabels[o.paymentStatus] || o.paymentStatus,
+              o.items.map(i => `${i.qty}x ${i.name}`).join(", "),
+              Number(o.total), Number(o.costOfGoods), Number(o.total) - Number(o.costOfGoods), o.note || ""
+            ])
+          ]
+        },
+        {
+          name: "Nhập hàng",
+          rows: [
+            ["Ngày nhập", "Nguyên liệu", "Số lượng nhập", "Đơn vị", "Tổng tiền mua", "Nhà cung cấp"],
+            ...(appData.receipts || []).map(r => [r.receivedAt.slice(0, 10), r.ingredientName, Number(r.quantity), r.unit, Number(r.purchaseTotal), r.supplier || ""])
+          ]
+        },
+        {
+          name: "Tồn kho",
+          rows: [
+            ["Nguyên liệu", "Tồn kho hiện tại", "Đơn vị", "Giá mua/Gói", "Quy cách gói", "Hao hụt (%)", "Mức cảnh báo", "Nhà cung cấp"],
+            ...appData.ingredients.map(i => [i.name, Number(i.quantity), i.unit, Number(i.purchasePrice), Number(i.packSize), Number(i.lossPercent), Number(i.alertAt), i.supplier || ""])
+          ]
+        }
+      ]);
+
+      const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `MVie-Cake-Bao-Cao-${month}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+      triggerActivity('office');
+      showNotice(`Đã xuất file Excel 6 Sheet (MVie-Cake-Bao-Cao-${month}.xlsx)!`);
+    }
+
+    // =========================================================================
+    // 5. HỆ THỐNG MODAL NHẬP LIỆU THÔNG MINH & DỄ DÙNG
+    // =========================================================================
+    function handleBackdropClick(e) {
+      if (e.target.id === 'modal-container') closeModal();
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    function closeModal() {
+      const container = document.getElementById('modal-container');
+      container.style.setProperty('display', 'none', 'important');
+    }
+
     function openModal(name, extraParam = null) {
       const container = document.getElementById('modal-container');
       const title = document.getElementById('modal-title');
+      const eyebrow = document.getElementById('modal-eyebrow');
       const body = document.getElementById('modal-body-content');
-      container.style.display = 'block';
+      container.style.setProperty('display', 'flex', 'important');
 
+      // -----------------------------------------------------------------------
+      // A. MODAL NHẬP KHO NGUYÊN LIỆU
+      // -----------------------------------------------------------------------
       if (name === 'stock') {
-        title.textContent = 'Nhập nguyên liệu kho';
+        eyebrow.textContent = 'Tầng 1 · Quản lý kho nguyên liệu';
+        title.textContent = 'Nhập nguyên vật liệu vào kho';
+        const preselectedIng = extraParam ? appData.ingredients.find(i => i.id === extraParam) : null;
+
         body.innerHTML = `
           <form class="form" onsubmit="handleStockSubmit(event)">
-            <label class="field"><span>Tên nguyên liệu</span><input name="name" required placeholder="Bột mì số 8"></label>
-            <div class="form-grid">
-              <label class="field"><span>Đơn vị</span><select name="unit"><option value="g">gram (g)</option><option value="ml">mililít (ml)</option><option value="cái">cái</option></select></label>
-              <label class="field"><span>Lượng nhập</span><input name="quantity" type="number" min="0.01" step="0.01" required value="1000"></label>
-              <label class="field"><span>Khối lượng gói/chai</span><input name="packSize" type="number" min="0.01" step="0.01" required value="1000"></label>
-              <label class="field"><span>Tổng tiền mua</span><input name="purchaseTotal" type="number" min="0" step="1000" required value="25000"></label>
-              <label class="field"><span>Hao hụt nguyên liệu (%)</span><input name="lossPercent" type="number" min="0" max="99" step="0.1" value="2"></label>
-              <label class="field"><span>Cảnh báo khi còn</span><input name="alertAt" type="number" min="0" step="0.01" value="500"></label>
-            </div>
-            <label class="field"><span>Nhà cung cấp</span><input name="supplier" placeholder="Tên đại lý / nhà phân phối"></label>
-            <button class="primary submit" type="submit">Xác nhận nhập kho</button>
-          </form>
-        `;
-      } else if (name === 'recipe') {
-        title.textContent = 'Tạo công thức bánh';
-        body.innerHTML = `
-          <form class="form" onsubmit="handleRecipeSubmit(event)">
-            <label class="field"><span>Tên bánh</span><input name="name" required placeholder="Ví dụ: Bento Hoa Hồng"></label>
-            <div class="form-grid">
-              <label class="field"><span>Số bánh / mẻ</span><input name="yieldCount" type="number" min="1" value="4" required></label>
-              <label class="field"><span>Giá bán / bánh</span><input name="salePrice" type="number" min="0" step="1000" value="130000" required></label>
-              <label class="field"><span>Nhân công / mẻ</span><input name="laborCost" type="number" min="0" step="1000" value="40000"></label>
-              <label class="field"><span>Bao bì / mẻ</span><input name="packagingCost" type="number" min="0" step="1000" value="30000"></label>
-              <label class="field"><span>Chi phí khác / mẻ</span><input name="otherCost" type="number" min="0" step="1000" value="10000"></label>
-              <label class="field"><span>Hao hụt cả mẻ (%)</span><input name="batchLossPercent" type="number" min="0" max="99" step="0.1" value="4"></label>
-            </div>
-            <fieldset>
-              <legend>Chọn nguyên liệu chính</legend>
-              ${appData.ingredients.map((ing, idx) => `
-                <div class="ingredient-line">
-                  <span>${ing.name} (${ing.unit})</span>
-                  <input name="ing_${ing.id}" type="number" min="0" step="0.01" placeholder="Lượng dùng">
-                </div>
-              `).join('')}
-            </fieldset>
-            <button class="primary submit" type="submit">Lưu công thức bánh</button>
-          </form>
-        `;
-      } else if (name === 'produce') {
-        title.textContent = 'Sản xuất bánh (Bếp bánh)';
-        body.innerHTML = `
-          <form class="form" onsubmit="handleProduceSubmit(event)">
-            <label class="field"><span>Chọn công thức bánh</span>
-              <select name="recipeId" required>
-                ${appData.recipes.map(r => `
-                  <option value="${r.id}" ${extraParam === r.id ? 'selected' : ''}>${r.name} · Tồn: ${r.finishedStock}</option>
+            <label class="field">
+              <span>Chọn nguyên liệu có sẵn hoặc thêm mới</span>
+              <select name="existingId" id="stock-select-existing" onchange="onStockExistingChange(this.value)">
+                <option value="">＋ Thêm nguyên liệu hoàn toàn mới...</option>
+                ${appData.ingredients.map(i => `
+                  <option value="${i.id}" ${preselectedIng && preselectedIng.id === i.id ? 'selected' : ''}>
+                    ${i.name} (Đang tồn: ${numFmt.format(i.quantity)} ${i.unit})
+                  </option>
                 `).join('')}
               </select>
             </label>
-            <label class="field"><span>Số mẻ nướng</span><input name="batches" type="number" min="1" step="1" value="1" required></label>
-            <p class="form-hint">Kho sẽ tự động trừ lượng nguyên liệu tương ứng và cộng số bánh vào kho thành phẩm.</p>
-            <button class="primary submit" type="submit">Bắt đầu làm bánh</button>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Tên nguyên liệu *</span>
+                <input name="name" id="stock-name" required placeholder="Ví dụ: Bột mì số 8" value="${preselectedIng ? preselectedIng.name : ''}">
+              </label>
+              <label class="field">
+                <span>Đơn vị tính</span>
+                <select name="unit" id="stock-unit" onchange="updateStockPreview()">
+                  <option value="g" ${preselectedIng?.unit === 'g' ? 'selected' : ''}>gram (g)</option>
+                  <option value="ml" ${preselectedIng?.unit === 'ml' ? 'selected' : ''}>mililít (ml)</option>
+                  <option value="cái" ${preselectedIng?.unit === 'cái' ? 'selected' : ''}>cái / quả</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Tổng lượng nhập đợt này *</span>
+                <input name="quantity" id="stock-qty" type="number" min="0.01" step="0.01" required value="${preselectedIng ? preselectedIng.packSize : 1000}" oninput="updateStockPreview()">
+              </label>
+              <label class="field">
+                <span>Tổng số tiền trả cho đợt nhập này (VND) *</span>
+                <input name="purchaseTotal" id="stock-total" type="number" min="0" step="500" required value="${preselectedIng ? preselectedIng.purchasePrice : 25000}" oninput="updateStockPreview()">
+              </label>
+            </div>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Quy cách 1 gói / hộp chuẩn</span>
+                <input name="packSize" id="stock-pack" type="number" min="0.01" step="0.01" required value="${preselectedIng ? preselectedIng.packSize : 1000}" oninput="updateStockPreview()">
+              </label>
+              <label class="field">
+                <span>Hao hụt tự nhiên (%)</span>
+                <input name="lossPercent" id="stock-loss" type="number" min="0" max="95" step="0.5" value="${preselectedIng ? preselectedIng.lossPercent : 2}" oninput="updateStockPreview()">
+              </label>
+              <label class="field">
+                <span>Cảnh báo sắp hết khi tồn ≤</span>
+                <input name="alertAt" id="stock-alert" type="number" min="0" step="1" value="${preselectedIng ? preselectedIng.alertAt : 500}">
+              </label>
+              <label class="field">
+                <span>Nhà cung cấp</span>
+                <input name="supplier" id="stock-supplier" placeholder="Tên đại lý / cửa hàng" value="${preselectedIng ? preselectedIng.supplier : ''}">
+              </label>
+            </div>
+
+            <div class="live-preview-box" id="stock-live-preview"></div>
+
+            <button class="primary submit" type="submit">📦 Xác nhận nhập kho &amp; Ghi sổ chi</button>
           </form>
         `;
-      } else if (name === 'order') {
-        title.textContent = 'Tạo đơn đặt bánh online';
+        updateStockPreview();
+      }
+
+      // -----------------------------------------------------------------------
+      // B. MODAL TẠO / SỬA CÔNG THỨC BÁNH (CÓ LIVE COST PREVIEW)
+      // -----------------------------------------------------------------------
+      else if (name === 'recipe') {
+        const editRec = extraParam ? appData.recipes.find(r => r.id === extraParam) : null;
+        eyebrow.textContent = 'Định lượng chuẩn · Tính giá vốn tự động';
+        title.textContent = editRec ? `Chỉnh sửa công thức: ${editRec.name}` : 'Tạo công thức bánh mới';
+
+        const initialLines = editRec && editRec.lines?.length
+          ? editRec.lines
+          : [{ ingredientId: appData.ingredients[0]?.id || '', quantity: 200 }, { ingredientId: appData.ingredients[1]?.id || '', quantity: 100 }];
+
         body.innerHTML = `
-          <form class="form" onsubmit="handleOrderSubmit(event)">
+          <form class="form" id="recipe-form" onsubmit="handleRecipeSubmit(event, '${editRec ? editRec.id : ''}')">
             <div class="form-grid">
-              <label class="field"><span>Tên khách hàng</span><input name="customerName" required placeholder="Chị Lan"></label>
-              <label class="field"><span>Số điện thoại</span><input name="phone" placeholder="090..."></label>
+              <label class="field">
+                <span>Tên loại bánh *</span>
+                <input name="name" required placeholder="Ví dụ: Bento Kem Dâu" value="${editRec ? editRec.name : ''}">
+              </label>
+              <label class="field">
+                <span>Số bánh thu được / 1 mẻ *</span>
+                <input name="yieldCount" id="rec-yield" type="number" min="1" step="1" value="${editRec ? editRec.yieldCount : 4}" required oninput="updateRecipeLiveCost()">
+              </label>
             </div>
-            <label class="field"><span>Địa chỉ giao bánh</span><input name="address" placeholder="Nhận tại tiệm hoặc địa chỉ nhà"></label>
+
             <div class="form-grid">
-              <label class="field"><span>Loại bánh</span>
-                <select name="recipeId" required>
+              <label class="field">
+                <span>Giá bán lẻ / 1 bánh (VND) *</span>
+                <input name="salePrice" id="rec-price" type="number" min="0" step="1000" value="${editRec ? editRec.salePrice : 135000}" required oninput="updateRecipeLiveCost()">
+              </label>
+              <label class="field">
+                <span>Hao hụt cả mẻ khi nướng (%)</span>
+                <input name="batchLossPercent" id="rec-loss" type="number" min="0" max="90" step="0.5" value="${editRec ? editRec.batchLossPercent : 4}" oninput="updateRecipeLiveCost()">
+              </label>
+              <label class="field">
+                <span>Chi phí nhân công / 1 mẻ</span>
+                <input name="laborCost" id="rec-labor" type="number" min="0" step="1000" value="${editRec ? editRec.laborCost : 40000}" oninput="updateRecipeLiveCost()">
+              </label>
+              <label class="field">
+                <span>Chi phí hộp, đế, muỗng, nến / 1 mẻ</span>
+                <input name="packagingCost" id="rec-pack" type="number" min="0" step="1000" value="${editRec ? editRec.packagingCost : 28000}" oninput="updateRecipeLiveCost()">
+              </label>
+              <label class="field">
+                <span>Chi phí điện, lò nướng, khác / 1 mẻ</span>
+                <input name="otherCost" id="rec-other" type="number" min="0" step="1000" value="${editRec ? editRec.otherCost : 8000}" oninput="updateRecipeLiveCost()">
+              </label>
+              <label class="field">
+                <span>Số bánh thành phẩm đang có sẵn</span>
+                <input name="finishedStock" type="number" min="0" step="1" value="${editRec ? editRec.finishedStock : 0}">
+              </label>
+            </div>
+
+            <fieldset>
+              <legend>Định lượng nguyên liệu cho 1 mẻ bánh</legend>
+              <div id="recipe-lines-container"></div>
+              <button type="button" class="btn-sm" style="margin-top:6px" onclick="addRecipeLineRow()">＋ Thêm dòng nguyên liệu</button>
+            </fieldset>
+
+            <div class="live-preview-box" id="recipe-live-preview"></div>
+
+            <button class="primary submit" type="submit">💾 Lưu công thức &amp; Cập nhật bảng Cost</button>
+          </form>
+        `;
+
+        const containerLines = document.getElementById('recipe-lines-container');
+        containerLines.innerHTML = '';
+        initialLines.forEach(l => addRecipeLineRow(l.ingredientId, l.quantity));
+        updateRecipeLiveCost();
+      }
+
+      // -----------------------------------------------------------------------
+      // C. MODAL BẾP BÁNH (SẢN XUẤT & KIỂM TRA ĐỊNH LƯỢNG TỒN KHO)
+      // -----------------------------------------------------------------------
+      else if (name === 'produce') {
+        eyebrow.textContent = 'Tầng 2 · Bếp nướng bánh';
+        title.textContent = 'Sản xuất mẻ bánh mới';
+        const defaultRecId = extraParam || appData.recipes[0]?.id || '';
+
+        body.innerHTML = `
+          <form class="form" onsubmit="handleProduceSubmit(event)">
+            <div class="form-grid">
+              <label class="field">
+                <span>Chọn công thức bánh *</span>
+                <select name="recipeId" id="prod-recipe" required onchange="updateProduceCheck()">
                   ${appData.recipes.map(r => `
-                    <option value="${r.id}">${r.name} (${money.format(r.salePrice)})</option>
+                    <option value="${r.id}" ${r.id === defaultRecId ? 'selected' : ''}>
+                      ${r.name} (${r.yieldCount} bánh/mẻ · Đang có: ${r.finishedStock || 0} bánh)
+                    </option>
                   `).join('')}
                 </select>
               </label>
-              <label class="field"><span>Số lượng</span><input name="qty" type="number" min="1" value="1" required></label>
-              <label class="field"><span>Thanh toán</span>
-                <select name="paymentStatus">
-                  <option value="unpaid">Chưa thanh toán</option>
-                  <option value="partial">Đã cọc</option>
-                  <option value="paid" selected>Đã thanh toán</option>
-                </select>
+              <label class="field">
+                <span>Số mẻ muốn nướng *</span>
+                <input name="batches" id="prod-batches" type="number" min="1" step="1" value="1" required oninput="updateProduceCheck()">
               </label>
-              <label class="field"><span>Trạng thái đơn</span>
+            </div>
+
+            <div id="produce-check-container"></div>
+
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;font-weight:700;cursor:pointer">
+              <input type="checkbox" name="allowNegative" id="prod-allow-force" style="width:18px;height:18px;min-height:0">
+              <span>Cho phép nướng ngay cả khi kho thiếu nguyên liệu (tự động trừ tồn kho về 0)</span>
+            </label>
+
+            <button class="primary submit" type="submit">👨‍🍳 Bắt đầu nướng bánh &amp; Nhập kho thành phẩm</button>
+          </form>
+        `;
+        updateProduceCheck();
+      }
+
+      // -----------------------------------------------------------------------
+      // D. MODAL TẠO ĐƠN HÀNG ĐA MÓN (MULTI-ITEM ORDER)
+      // -----------------------------------------------------------------------
+      else if (name === 'order') {
+        eyebrow.textContent = 'Quầy bán hàng · Tạo đơn';
+        title.textContent = 'Tạo đơn đặt bánh mới';
+
+        body.innerHTML = `
+          <form class="form" id="order-form" onsubmit="handleOrderSubmit(event)">
+            <div class="form-grid">
+              <label class="field">
+                <span>Tên khách hàng *</span>
+                <input name="customerName" required placeholder="Ví dụ: Chị Thảo, Anh Minh...">
+              </label>
+              <label class="field">
+                <span>Số điện thoại</span>
+                <input name="phone" inputmode="tel" placeholder="0908...">
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Địa chỉ giao bánh / Giờ hẹn lấy</span>
+              <input name="address" placeholder="Số nhà, đường, phường hoặc Khách ghé tiệm lấy...">
+            </label>
+
+            <fieldset>
+              <legend>Danh sách bánh khách đặt</legend>
+              <div id="order-items-container"></div>
+              <button type="button" class="btn-sm" style="margin-top:6px" onclick="addOrderItemRow()">＋ Thêm món bánh khác</button>
+            </fieldset>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Phí giao hàng (Ship)</span>
+                <input name="shippingFee" id="ord-ship" type="number" min="0" step="1000" value="0" oninput="updateOrderLiveTotal()">
+              </label>
+              <label class="field">
+                <span>Giảm giá / Khuyến mãi</span>
+                <input name="discount" id="ord-discount" type="number" min="0" step="1000" value="0" oninput="updateOrderLiveTotal()">
+              </label>
+              <label class="field">
+                <span>Trạng thái đơn</span>
                 <select name="status">
                   <option value="new">Đơn mới</option>
                   <option value="making" selected>Đang làm bánh</option>
                   <option value="ready">Chờ giao</option>
-                  <option value="delivered">Đã giao</option>
+                  <option value="delivered">Đã giao hoàn tất</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Trạng thái thanh toán</span>
+                <select name="paymentStatus">
+                  <option value="unpaid">Chưa thanh toán</option>
+                  <option value="partial">Khách đã cọc</option>
+                  <option value="paid" selected>Đã thanh toán đủ</option>
                 </select>
               </label>
             </div>
-            <button class="primary submit" type="submit">Xác nhận tạo đơn</button>
+
+            <label class="field">
+              <span>Ghi chú đơn bánh (Chữ viết lên bánh, ít ngọt, nến sinh nhật...)</span>
+              <input name="note" placeholder="Ví dụ: Ghi chữ Happy Birthday Bé Na, giao trước 16h...">
+            </label>
+
+            <div class="live-preview-box" id="order-live-preview"></div>
+
+            <button class="primary submit" type="submit">🧾 Xác nhận tạo đơn hàng</button>
           </form>
         `;
-      } else if (name === 'transaction') {
+        addOrderItemRow(appData.recipes[0]?.id || '', 1);
+        updateOrderLiveTotal();
+      }
+
+      // -----------------------------------------------------------------------
+      // E. MODAL GHI SỔ THU CHI
+      // -----------------------------------------------------------------------
+      else if (name === 'transaction') {
+        eyebrow.textContent = 'Tầng 3 · Phòng kế toán';
         title.textContent = 'Ghi sổ thu – chi';
         body.innerHTML = `
           <form class="form" onsubmit="handleTransactionSubmit(event)">
             <div class="form-grid">
-              <label class="field"><span>Loại giao dịch</span>
-                <select name="direction">
-                  <option value="expense">Khoản chi ra</option>
-                  <option value="income">Khoản thu vào</option>
+              <label class="field">
+                <span>Loại giao dịch</span>
+                <select name="direction" id="tx-dir" onchange="onTxDirectionChange()">
+                  <option value="expense">↘ Khoản chi ra</option>
+                  <option value="income">↗ Khoản thu khác vào</option>
                 </select>
               </label>
-              <label class="field"><span>Số tiền</span><input name="amount" type="number" min="1000" step="1000" value="50000" required></label>
+              <label class="field">
+                <span>Số tiền (VND) *</span>
+                <input name="amount" id="tx-amount" type="number" min="1000" step="1000" value="100000" required oninput="document.getElementById('tx-money-preview').textContent = money.format(this.value || 0)">
+                <span class="money-hint" id="tx-money-preview">100.000 ₫</span>
+              </label>
             </div>
-            <label class="field"><span>Nhóm thu chi</span>
-              <select name="category">
-                <option value="Chi phí vận hành">Chi phí vận hành</option>
-                <option value="Điện nước">Điện nước</option>
-                <option value="Lương nhân viên">Lương nhân viên</option>
-                <option value="Bao bì & hộp">Bao bì &amp; hộp</option>
-                <option value="Thu khác">Thu khác</option>
-              </select>
+
+            <div class="form-grid">
+              <label class="field">
+                <span>Nhóm danh mục</span>
+                <select name="category" id="tx-cat">
+                  <option value="Chi phí vận hành">Chi phí vận hành tiệm</option>
+                  <option value="Điện nước & Gas">Điện nước &amp; Gas</option>
+                  <option value="Lương & Phụ cấp">Lương &amp; Phụ cấp</option>
+                  <option value="Bao bì & Phụ kiện">Bao bì, hộp bánh, nến</option>
+                  <option value="Marketing & Quảng cáo">Marketing &amp; Quảng cáo</option>
+                  <option value="Nhập nguyên liệu">Nhập nguyên liệu (Chỉ vào dòng tiền)</option>
+                  <option value="Thu khác">Thu khác (Phụ kiện, nến, thiệp...)</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Ngày ghi sổ</span>
+                <input name="occurredAt" type="date" value="${todayIso()}" required>
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Diễn giải / Ghi chú chi tiết</span>
+              <input name="note" placeholder="Ví dụ: Tiền điện tháng này, mua thêm nến sinh nhật...">
             </label>
-            <label class="field"><span>Nội dung ghi chú</span><input name="note" placeholder="Mua đồ linh tinh tiệm bánh..."></label>
-            <button class="primary submit" type="submit">Lưu vào sổ quỹ</button>
+
+            <p class="form-hint">Lưu ý: Doanh thu bán bánh được tự động tính từ các <b>Đơn hàng Đã giao</b> nên bạn không cần nhập lại doanh thu đơn bánh ở đây để tránh trùng lặp.</p>
+
+            <button class="primary submit" type="submit">💾 Lưu vào sổ quỹ</button>
           </form>
+        `;
+      }
+
+      // -----------------------------------------------------------------------
+      // F. MODAL SAO LƯU & KHÔI PHỤC DỮ LIỆU
+      // -----------------------------------------------------------------------
+      else if (name === 'backup') {
+        eyebrow.textContent = 'An toàn dữ liệu · M’Vie Cake';
+        title.textContent = 'Quản lý & Sao lưu dữ liệu tiệm bánh';
+        body.innerHTML = `
+          <div class="form">
+            <div class="live-preview-box">
+              <div class="live-preview-item"><small>Nguyên liệu kho</small><b>${appData.ingredients.length} loại</b></div>
+              <div class="live-preview-item"><small>Công thức bánh</small><b>${appData.recipes.length} món</b></div>
+              <div class="live-preview-item"><small>Tổng đơn hàng</small><b>${appData.orders.length} đơn</b></div>
+              <div class="live-preview-item"><small>Sổ thu chi</small><b>${appData.transactions.length} dòng</b></div>
+            </div>
+
+            <div style="display:grid;gap:10px">
+              <button type="button" class="primary full" onclick="exportDataExcel()">⬇ Tải báo cáo Excel 6 Sheet (.xlsx)</button>
+              <button type="button" class="secondary full" onclick="downloadJsonBackup()">💾 Tải file Sao lưu toàn bộ dữ liệu (.json)</button>
+              
+              <label class="secondary full" style="cursor:pointer;margin:0">
+                <span>📂 Khôi phục dữ liệu từ file Sao lưu (.json)</span>
+                <input type="file" accept=".json" style="display:none" onchange="restoreJsonBackup(event)">
+              </label>
+
+              <hr style="border:0;border-top:1px solid #bfd9e8;margin:8px 0">
+              <button type="button" class="btn-sm danger-sm full" style="min-height:42px" onclick="resetToSampleData()">🔄 Khôi phục lại bộ dữ liệu mẫu ban đầu</button>
+            </div>
+          </div>
         `;
       }
     }
 
-    function closeModal() {
-      document.getElementById('modal-container').style.display = 'none';
+    // --- HELPER FUNCTIONS FOR STOCK MODAL ---
+    function onStockExistingChange(ingId) {
+      const ing = appData.ingredients.find(i => i.id === ingId);
+      if (ing) {
+        document.getElementById('stock-name').value = ing.name;
+        document.getElementById('stock-unit').value = ing.unit;
+        document.getElementById('stock-qty').value = ing.packSize;
+        document.getElementById('stock-pack').value = ing.packSize;
+        document.getElementById('stock-total').value = ing.purchasePrice;
+        document.getElementById('stock-loss').value = ing.lossPercent || 0;
+        document.getElementById('stock-alert').value = ing.alertAt || 100;
+        document.getElementById('stock-supplier').value = ing.supplier || '';
+      } else {
+        document.getElementById('stock-name').value = '';
+      }
+      updateStockPreview();
     }
 
+    function updateStockPreview() {
+      const box = document.getElementById('stock-live-preview');
+      if (!box) return;
+      const qty = Math.max(0.01, parseFloat(document.getElementById('stock-qty')?.value) || 1);
+      const total = Math.max(0, parseFloat(document.getElementById('stock-total')?.value) || 0);
+      const pack = Math.max(0.01, parseFloat(document.getElementById('stock-pack')?.value) || 1);
+      const unit = document.getElementById('stock-unit')?.value || 'g';
+      const loss = parseFloat(document.getElementById('stock-loss')?.value) || 0;
+
+      const unitPrice = total / qty; // Giá trên 1 g/ml/cái
+      const pricePerPack = unitPrice * pack; // Giá chuẩn cho 1 gói packSize
+      const usableQty = qty * (1 - loss / 100);
+
+      box.innerHTML = `
+        <div class="live-preview-item"><small>Tổng tiền chi nhập</small><b>${money.format(total)}</b></div>
+        <div class="live-preview-item"><small>Giá quy đổi / 1 gói (${numFmt.format(pack)}${unit})</small><b class="good">${money.format(pricePerPack)}</b></div>
+        <div class="live-preview-item"><small>Đơn giá / 1 ${unit}</small><b>${money.format(unitPrice)}</b></div>
+        <div class="live-preview-item"><small>Thực dùng (trừ ${loss}% hao)</small><b>${numFmt.format(usableQty)} ${unit}</b></div>
+      `;
+    }
+
+    function openEditIngredientModal(ingId) {
+      const ing = appData.ingredients.find(i => i.id === ingId);
+      if (!ing) return;
+      const container = document.getElementById('modal-container');
+      const title = document.getElementById('modal-title');
+      const eyebrow = document.getElementById('modal-eyebrow');
+      const body = document.getElementById('modal-body-content');
+      container.style.setProperty('display', 'flex', 'important');
+
+      eyebrow.textContent = 'Điều chỉnh kiểm kê kho';
+      title.textContent = `Sửa thông tin: ${ing.name}`;
+      body.innerHTML = `
+        <form class="form" onsubmit="handleEditIngredientSubmit(event, '${ing.id}')">
+          <div class="form-grid">
+            <label class="field"><span>Tên nguyên liệu *</span><input name="name" required value="${ing.name}"></label>
+            <label class="field"><span>Đơn vị</span>
+              <select name="unit">
+                <option value="g" ${ing.unit === 'g' ? 'selected' : ''}>gram (g)</option>
+                <option value="ml" ${ing.unit === 'ml' ? 'selected' : ''}>mililít (ml)</option>
+                <option value="cái" ${ing.unit === 'cái' ? 'selected' : ''}>cái / quả</option>
+              </select>
+            </label>
+            <label class="field"><span>Tồn kho thực tế hiện tại *</span><input name="quantity" type="number" min="0" step="0.01" required value="${ing.quantity}"></label>
+            <label class="field"><span>Quy cách 1 gói/hộp chuẩn *</span><input name="packSize" type="number" min="0.01" step="0.01" required value="${ing.packSize}"></label>
+            <label class="field"><span>Giá mua 1 gói/hộp chuẩn (VND) *</span><input name="purchasePrice" type="number" min="0" step="500" required value="${ing.purchasePrice}"></label>
+            <label class="field"><span>Hao hụt tự nhiên (%)</span><input name="lossPercent" type="number" min="0" max="95" step="0.5" value="${ing.lossPercent || 0}"></label>
+            <label class="field"><span>Mức báo động sắp hết</span><input name="alertAt" type="number" min="0" step="1" value="${ing.alertAt || 100}"></label>
+            <label class="field"><span>Nhà cung cấp</span><input name="supplier" value="${ing.supplier || ''}"></label>
+          </div>
+          <button class="primary submit" type="submit">💾 Lưu cập nhật kiểm kê</button>
+        </form>
+      `;
+    }
+
+    function handleEditIngredientSubmit(e, ingId) {
+      e.preventDefault();
+      const ing = appData.ingredients.find(i => i.id === ingId);
+      if (!ing) return;
+      const form = new FormData(e.target);
+      ing.name = form.get('name').trim();
+      ing.unit = form.get('unit');
+      ing.quantity = parseFloat(form.get('quantity')) || 0;
+      ing.packSize = Math.max(0.01, parseFloat(form.get('packSize')) || 1);
+      ing.purchasePrice = Math.max(0, parseFloat(form.get('purchasePrice')) || 0);
+      ing.lossPercent = parseFloat(form.get('lossPercent')) || 0;
+      ing.alertAt = parseFloat(form.get('alertAt')) || 0;
+      ing.supplier = form.get('supplier').trim();
+
+      saveData();
+      closeModal();
+      renderCurrentView();
+      showNotice(`Đã cập nhật nguyên liệu "${ing.name}".`);
+    }
+
+    // --- HELPER FUNCTIONS FOR RECIPE MODAL ---
+    function addRecipeLineRow(selectedId = '', qty = '') {
+      const container = document.getElementById('recipe-lines-container');
+      if (!container) return;
+      const row = document.createElement('div');
+      row.className = 'line-item-row';
+      row.innerHTML = `
+        <select class="rec-line-ing" onchange="updateRecipeLiveCost()">
+          <option value="">-- Chọn nguyên liệu --</option>
+          ${appData.ingredients.map(i => `
+            <option value="${i.id}" ${i.id === selectedId ? 'selected' : ''}>
+              ${i.name} (${money.format(ingredientUnitCost(i))}/${i.unit})
+            </option>
+          `).join('')}
+        </select>
+        <input type="number" class="rec-line-qty" min="0.01" step="0.01" placeholder="Định lượng" value="${qty}" oninput="updateRecipeLiveCost()">
+        <button type="button" class="btn-remove-line" onclick="this.parentElement.remove(); updateRecipeLiveCost();" title="Xóa dòng">×</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function updateRecipeLiveCost() {
+      const box = document.getElementById('recipe-live-preview');
+      if (!box) return;
+      const yieldCount = Math.max(1, parseInt(document.getElementById('rec-yield')?.value, 10) || 1);
+      const salePrice = Math.max(0, parseFloat(document.getElementById('rec-price')?.value) || 0);
+      const batchLossPercent = Math.max(0, parseFloat(document.getElementById('rec-loss')?.value) || 0);
+      const laborCost = Math.max(0, parseFloat(document.getElementById('rec-labor')?.value) || 0);
+      const packagingCost = Math.max(0, parseFloat(document.getElementById('rec-pack')?.value) || 0);
+      const otherCost = Math.max(0, parseFloat(document.getElementById('rec-other')?.value) || 0);
+
+      const lines = [];
+      document.querySelectorAll('#recipe-lines-container .line-item-row').forEach(r => {
+        const ingredientId = r.querySelector('.rec-line-ing')?.value;
+        const quantity = parseFloat(r.querySelector('.rec-line-qty')?.value) || 0;
+        if (ingredientId && quantity > 0) lines.push({ ingredientId, quantity });
+      });
+
+      const cost = calculateRecipeCost({ yieldCount, salePrice, batchLossPercent, laborCost, packagingCost, otherCost, lines });
+      box.innerHTML = `
+        <div class="live-preview-item"><small>Cost nguyên liệu / mẻ</small><b>${money.format(cost.ingredientCost)}</b></div>
+        <div class="live-preview-item"><small>Tổng Cost / mẻ (${yieldCount} bánh)</small><b>${money.format(cost.batchCost)}</b></div>
+        <div class="live-preview-item"><small>Giá vốn (Cost) / 1 bánh</small><b>${money.format(cost.unitCost)}</b></div>
+        <div class="live-preview-item"><small>Lãi gộp / 1 bánh</small><b class="${cost.grossProfitPerUnit >= 0 ? 'good' : 'warn'}">${money.format(cost.grossProfitPerUnit)} (${cost.marginPercent}%)</b></div>
+      `;
+    }
+
+    // --- HELPER FUNCTIONS FOR PRODUCE MODAL ---
+    function updateProduceCheck() {
+      const container = document.getElementById('produce-check-container');
+      if (!container) return;
+      const recipeId = document.getElementById('prod-recipe')?.value;
+      const batches = Math.max(1, parseInt(document.getElementById('prod-batches')?.value, 10) || 1);
+      const recipe = appData.recipes.find(r => r.id === recipeId);
+      if (!recipe) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const cost = calculateRecipeCost(recipe);
+      const totalCakes = Number(recipe.yieldCount || 1) * batches;
+
+      let rowsHtml = '';
+      (recipe.lines || []).forEach(line => {
+        const ing = appData.ingredients.find(i => i.id === line.ingredientId);
+        if (!ing) return;
+        const needed = effectiveQuantity(line.quantity, ing.lossPercent) * batches;
+        const enough = Number(ing.quantity) >= needed;
+        rowsHtml += `
+          <tr>
+            <td><b>${ing.name}</b></td>
+            <td>${numFmt.format(needed)} ${ing.unit}</td>
+            <td>${numFmt.format(ing.quantity)} ${ing.unit}</td>
+            <td style="font-weight:800;color:${enough ? '#22784b' : '#c93d63'}">${enough ? '✓ Đủ' : '⚠️ Thiếu ' + numFmt.format(needed - ing.quantity) + ' ' + ing.unit}</td>
+          </tr>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="live-preview-box" style="margin-bottom:10px">
+          <div class="live-preview-item"><small>Sản lượng ra lò</small><b class="good">+${totalCakes} bánh</b></div>
+          <div class="live-preview-item"><small>Tổng Cost mẻ nướng</small><b>${money.format(cost.batchCost * batches)}</b></div>
+          <div class="live-preview-item"><small>Giá vốn / 1 bánh</small><b>${money.format(cost.unitCost)}</b></div>
+        </div>
+        <table class="check-table">
+          <thead><tr><th>Nguyên liệu</th><th>Cần dùng (gồm hao hụt)</th><th>Kho đang có</th><th>Trạng thái</th></tr></thead>
+          <tbody>${rowsHtml || '<tr><td colspan="4">Công thức chưa có nguyên liệu</td></tr>'}</tbody>
+        </table>
+      `;
+    }
+
+    // --- HELPER FUNCTIONS FOR ORDER MODAL ---
+    function addOrderItemRow(selectedRecipeId = '', qty = 1) {
+      const container = document.getElementById('order-items-container');
+      if (!container) return;
+      const row = document.createElement('div');
+      row.className = 'line-item-row';
+      row.innerHTML = `
+        <select class="ord-item-rec" onchange="updateOrderLiveTotal()">
+          ${appData.recipes.map(r => `
+            <option value="${r.id}" ${r.id === selectedRecipeId ? 'selected' : ''}>
+              ${r.name} — ${money.format(r.salePrice)} (Tồn: ${r.finishedStock || 0})
+            </option>
+          `).join('')}
+        </select>
+        <input type="number" class="ord-item-qty" min="1" step="1" value="${qty}" placeholder="SL" oninput="updateOrderLiveTotal()">
+        <button type="button" class="btn-remove-line" onclick="if(document.querySelectorAll('#order-items-container .line-item-row').length > 1){this.parentElement.remove(); updateOrderLiveTotal();}" title="Xóa món">×</button>
+      `;
+      container.appendChild(row);
+    }
+
+    function updateOrderLiveTotal() {
+      const box = document.getElementById('order-live-preview');
+      if (!box) return;
+      let subtotal = 0, totalCogs = 0;
+      document.querySelectorAll('#order-items-container .line-item-row').forEach(r => {
+        const recId = r.querySelector('.ord-item-rec')?.value;
+        const qty = Math.max(1, parseInt(r.querySelector('.ord-item-qty')?.value, 10) || 1);
+        const rec = appData.recipes.find(x => x.id === recId);
+        if (rec) {
+          const c = calculateRecipeCost(rec);
+          subtotal += Number(rec.salePrice) * qty;
+          totalCogs += c.unitCost * qty;
+        }
+      });
+      const ship = Math.max(0, parseFloat(document.getElementById('ord-ship')?.value) || 0);
+      const discount = Math.max(0, parseFloat(document.getElementById('ord-discount')?.value) || 0);
+      const grandTotal = Math.max(0, subtotal + ship - discount);
+      const estProfit = grandTotal - totalCogs;
+
+      box.innerHTML = `
+        <div class="live-preview-item"><small>Tiền bánh</small><b>${money.format(subtotal)}</b></div>
+        <div class="live-preview-item"><small>Giá vốn bánh (COGS)</small><b>${money.format(totalCogs)}</b></div>
+        <div class="live-preview-item"><small>Tổng khách thanh toán</small><b style="color:#b74d69">${money.format(grandTotal)}</b></div>
+        <div class="live-preview-item"><small>Lãi gộp đơn hàng</small><b class="good">+${money.format(estProfit)}</b></div>
+      `;
+    }
+
+    function onTxDirectionChange() {
+      const dir = document.getElementById('tx-dir')?.value;
+      const cat = document.getElementById('tx-cat');
+      if (!cat) return;
+      if (dir === 'income') {
+        cat.value = 'Thu khác';
+      } else {
+        cat.value = 'Chi phí vận hành';
+      }
+    }
+
+    // =========================================================================
+    // 6. XỬ LÝ LƯU DỮ LIỆU KHI SUBMIT FORM
+    // =========================================================================
     function handleStockSubmit(e) {
       e.preventDefault();
       const form = new FormData(e.target);
-      const name = form.get('name');
-      const qty = parseFloat(form.get('quantity'));
-      const packSize = parseFloat(form.get('packSize'));
-      const price = parseFloat(form.get('purchaseTotal'));
+      const existingId = form.get('existingId');
+      const name = String(form.get('name') || '').trim();
+      const unit = form.get('unit') || 'g';
+      const qty = Math.max(0.01, parseFloat(form.get('quantity')) || 0);
+      const packSize = Math.max(0.01, parseFloat(form.get('packSize')) || 1);
+      const purchaseTotal = Math.max(0, parseFloat(form.get('purchaseTotal')) || 0);
+      const lossPercent = parseFloat(form.get('lossPercent')) || 0;
+      const alertAt = parseFloat(form.get('alertAt')) || 0;
+      const supplier = String(form.get('supplier') || '').trim();
 
-      let existing = appData.ingredients.find(i => i.name.toLowerCase() === name.toLowerCase());
-      if (existing) {
-        existing.quantity += qty;
-        existing.purchasePrice = price;
+      // Quy đổi chuẩn: Giá 1 gói (packSize) = (Tổng tiền đợt nhập / Tổng lượng nhập) * packSize
+      const unitPricePerPack = (purchaseTotal / qty) * packSize;
+
+      let targetIng = existingId
+        ? appData.ingredients.find(i => i.id === existingId)
+        : appData.ingredients.find(i => i.name.toLowerCase() === name.toLowerCase());
+
+      if (targetIng) {
+        targetIng.name = name;
+        targetIng.unit = unit;
+        targetIng.quantity = Number(targetIng.quantity || 0) + qty;
+        targetIng.packSize = packSize;
+        targetIng.purchasePrice = Math.round(unitPricePerPack);
+        targetIng.lossPercent = lossPercent;
+        targetIng.alertAt = alertAt;
+        if (supplier) targetIng.supplier = supplier;
       } else {
-        appData.ingredients.push({
+        targetIng = {
           id: `ing-${Date.now()}`,
-          name: name,
-          unit: form.get('unit'),
+          name,
+          unit,
           quantity: qty,
-          packSize: packSize,
-          purchasePrice: price,
-          lossPercent: parseFloat(form.get('lossPercent')) || 0,
-          alertAt: parseFloat(form.get('alertAt')) || 0,
-          supplier: form.get('supplier') || ''
-        });
+          packSize,
+          purchasePrice: Math.round(unitPricePerPack),
+          lossPercent,
+          alertAt,
+          supplier
+        };
+        appData.ingredients.push(targetIng);
       }
 
-      appData.transactions.push({
+      const now = new Date().toISOString();
+      appData.receipts = appData.receipts || [];
+      appData.receipts.unshift({
+        id: `rcp-${Date.now()}`,
+        ingredientId: targetIng.id,
+        ingredientName: targetIng.name,
+        quantity: qty,
+        unit,
+        purchaseTotal,
+        supplier,
+        receivedAt: now
+      });
+
+      appData.transactions.unshift({
         id: `tx-${Date.now()}`,
         direction: 'expense',
         accountingType: 'inventory_purchase',
         category: 'Nhập nguyên liệu',
-        amount: price,
-        note: `Nhập ${qty} ${form.get('unit')} ${name}`,
-        occurredAt: new Date().toISOString()
+        amount: purchaseTotal,
+        note: `Nhập +${numFmt.format(qty)}${unit} ${targetIng.name}`,
+        occurredAt: now
       });
 
       saveData();
       closeModal();
       triggerActivity('stock');
-      showNotice(`Đã nhập kho nguyên liệu: ${name} (+${qty})`);
       renderCurrentView();
+      showNotice(`Đã nhập kho +${numFmt.format(qty)}${unit} "${targetIng.name}" (Đơn giá gói: ${money.format(unitPricePerPack)})`);
     }
 
-    function handleRecipeSubmit(e) {
+    function handleRecipeSubmit(e, editId = '') {
       e.preventDefault();
       const form = new FormData(e.target);
-      const name = form.get('name');
-      const yieldCount = parseInt(form.get('yieldCount'), 10) || 1;
-      const salePrice = parseFloat(form.get('salePrice')) || 0;
+      const name = String(form.get('name') || '').trim();
+      const yieldCount = Math.max(1, parseInt(form.get('yieldCount'), 10) || 1);
+      const salePrice = Math.max(0, parseFloat(form.get('salePrice')) || 0);
+      const laborCost = Math.max(0, parseFloat(form.get('laborCost')) || 0);
+      const packagingCost = Math.max(0, parseFloat(form.get('packagingCost')) || 0);
+      const otherCost = Math.max(0, parseFloat(form.get('otherCost')) || 0);
+      const batchLossPercent = Math.max(0, parseFloat(form.get('batchLossPercent')) || 0);
+      const finishedStock = Math.max(0, parseInt(form.get('finishedStock'), 10) || 0);
+
       const lines = [];
-
-      appData.ingredients.forEach(ing => {
-        const val = parseFloat(form.get(`ing_${ing.id}`));
-        if (val > 0) lines.push({ ingredientId: ing.id, quantity: val });
+      document.querySelectorAll('#recipe-lines-container .line-item-row').forEach(r => {
+        const ingredientId = r.querySelector('.rec-line-ing')?.value;
+        const quantity = parseFloat(r.querySelector('.rec-line-qty')?.value) || 0;
+        if (ingredientId && quantity > 0) lines.push({ ingredientId, quantity });
       });
 
-      appData.recipes.push({
-        id: `rec-${Date.now()}`,
-        name: name,
-        yieldCount: yieldCount,
-        salePrice: salePrice,
-        laborCost: parseFloat(form.get('laborCost')) || 0,
-        packagingCost: parseFloat(form.get('packagingCost')) || 0,
-        otherCost: parseFloat(form.get('otherCost')) || 0,
-        batchLossPercent: parseFloat(form.get('batchLossPercent')) || 0,
-        finishedStock: 0,
-        lines: lines
-      });
+      if (lines.length === 0) {
+        showNotice('Vui lòng chọn ít nhất 1 nguyên liệu định lượng cho công thức bánh!', true);
+        return;
+      }
+
+      if (editId) {
+        const rec = appData.recipes.find(r => r.id === editId);
+        if (rec) {
+          Object.assign(rec, { name, yieldCount, salePrice, laborCost, packagingCost, otherCost, batchLossPercent, finishedStock, lines });
+        }
+      } else {
+        appData.recipes.push({
+          id: `rec-${Date.now()}`,
+          name, yieldCount, salePrice, laborCost, packagingCost, otherCost, batchLossPercent, finishedStock, lines
+        });
+      }
 
       saveData();
       closeModal();
       triggerActivity('office');
-      showNotice(`Đã lưu công thức bánh mới: ${name}`);
       renderCurrentView();
+      showNotice(`Đã lưu công thức bánh "${name}" thành công!`);
     }
 
     function handleProduceSubmit(e) {
       e.preventDefault();
       const form = new FormData(e.target);
       const recipeId = form.get('recipeId');
-      const batches = parseInt(form.get('batches'), 10) || 1;
+      const batches = Math.max(1, parseInt(form.get('batches'), 10) || 1);
+      const allowForce = document.getElementById('prod-allow-force')?.checked;
 
       const recipe = appData.recipes.find(r => r.id === recipeId);
       if (!recipe) return;
 
-      // Minus stock
-      if (recipe.lines) {
-        recipe.lines.forEach(line => {
+      // Kiểm tra tồn kho trước khi trừ
+      if (!allowForce) {
+        for (const line of (recipe.lines || [])) {
           const ing = appData.ingredients.find(i => i.id === line.ingredientId);
-          if (ing) {
-            ing.quantity = Math.max(0, ing.quantity - (line.quantity * batches));
+          const needed = ing ? effectiveQuantity(line.quantity, ing.lossPercent) * batches : 0;
+          if (ing && Number(ing.quantity) < needed) {
+            showNotice(`Kho thiếu "${ing.name}" (Cần ${numFmt.format(needed)}${ing.unit}, chỉ còn ${numFmt.format(ing.quantity)}${ing.unit}). Hãy nhập thêm kho hoặc tích chọn cho phép nướng!`, true);
+            return;
           }
-        });
+        }
       }
 
-      const made = (recipe.yieldCount || 1) * batches;
-      recipe.finishedStock = (recipe.finishedStock || 0) + made;
+      // Trừ kho theo lượng thực dùng (gồm hao hụt)
+      (recipe.lines || []).forEach(line => {
+        const ing = appData.ingredients.find(i => i.id === line.ingredientId);
+        if (ing) {
+          const needed = effectiveQuantity(line.quantity, ing.lossPercent) * batches;
+          ing.quantity = Math.max(0, Math.round((Number(ing.quantity) - needed) * 100) / 100);
+        }
+      });
+
+      const cost = calculateRecipeCost(recipe);
+      const made = Number(recipe.yieldCount || 1) * batches;
+      recipe.finishedStock = Number(recipe.finishedStock || 0) + made;
+
+      appData.productions = appData.productions || [];
+      appData.productions.unshift({
+        id: `prd-${Date.now()}`,
+        recipeId: recipe.id,
+        recipeName: recipe.name,
+        batches,
+        quantityMade: made,
+        totalCostSnapshot: Math.round(cost.batchCost * batches),
+        producedAt: new Date().toISOString()
+      });
 
       saveData();
       closeModal();
       triggerActivity('bake');
-      showNotice(`Bếp đã nướng xong ${batches} mẻ ${recipe.name} (+${made} bánh)!`);
       renderCurrentView();
+      showNotice(`Ra lò thành công ${batches} mẻ "${recipe.name}" (+${made} bánh vào tủ thành phẩm)!`);
     }
 
     function handleOrderSubmit(e) {
       e.preventDefault();
       const form = new FormData(e.target);
-      const recipeId = form.get('recipeId');
-      const qty = parseInt(form.get('qty'), 10) || 1;
-      const recipe = appData.recipes.find(r => r.id === recipeId);
-      if (!recipe) return;
+      const items = [];
+      let subtotal = 0, totalCogs = 0;
 
-      const cost = calculateRecipeCost(recipe);
-      const total = recipe.salePrice * qty;
-      const cogs = cost.unitCost * qty;
+      document.querySelectorAll('#order-items-container .line-item-row').forEach(r => {
+        const recId = r.querySelector('.ord-item-rec')?.value;
+        const qty = Math.max(1, parseInt(r.querySelector('.ord-item-qty')?.value, 10) || 1);
+        const rec = appData.recipes.find(x => x.id === recId);
+        if (rec) {
+          const c = calculateRecipeCost(rec);
+          items.push({
+            recipeId: rec.id,
+            name: rec.name,
+            qty,
+            unitPrice: Number(rec.salePrice),
+            unitCost: Math.round(c.unitCost)
+          });
+          subtotal += Number(rec.salePrice) * qty;
+          totalCogs += Math.round(c.unitCost * qty);
+          // Trừ bánh thành phẩm nếu có sẵn
+          rec.finishedStock = Math.max(0, Number(rec.finishedStock || 0) - qty);
+        }
+      });
+
+      if (items.length === 0) {
+        showNotice('Vui lòng chọn ít nhất 1 món bánh cho đơn hàng!', true);
+        return;
+      }
+
+      const shippingFee = Math.max(0, parseFloat(form.get('shippingFee')) || 0);
+      const discount = Math.max(0, parseFloat(form.get('discount')) || 0);
+      const total = Math.max(0, subtotal + shippingFee - discount);
       const orderCode = `MVC-${Math.floor(1000 + Math.random() * 9000)}`;
 
-      const newOrder = {
+      appData.orders.unshift({
         id: `ord-${Date.now()}`,
         code: orderCode,
-        customerName: form.get('customerName'),
-        phone: form.get('phone') || '',
-        address: form.get('address') || '',
+        customerName: String(form.get('customerName') || 'Khách lẻ').trim(),
+        phone: String(form.get('phone') || '').trim(),
+        address: String(form.get('address') || '').trim(),
         status: form.get('status') || 'making',
         paymentStatus: form.get('paymentStatus') || 'paid',
-        items: [{ name: recipe.name, qty: qty }],
-        total: total,
-        costOfGoods: cogs,
+        items,
+        shippingFee,
+        discount,
+        total,
+        costOfGoods: totalCogs,
+        note: String(form.get('note') || '').trim(),
         orderedAt: new Date().toISOString()
-      };
-
-      appData.orders.unshift(newOrder);
-
-      if (recipe.finishedStock >= qty) {
-        recipe.finishedStock -= qty;
-      }
+      });
 
       saveData();
       closeModal();
       triggerActivity('bake');
-      showNotice(`Đã tạo đơn hàng mới: ${orderCode} (${recipe.name} × ${qty})`);
       renderCurrentView();
+      showNotice(`Đã tạo đơn hàng ${orderCode} (${money.format(total)})!`);
     }
 
     function handleTransactionSubmit(e) {
       e.preventDefault();
       const form = new FormData(e.target);
-      const amount = parseFloat(form.get('amount')) || 0;
-      const direction = form.get('direction');
+      const direction = form.get('direction') || 'expense';
+      const category = form.get('category') || 'Chi phí vận hành';
+      const amount = Math.max(0, parseFloat(form.get('amount')) || 0);
+      const dateStr = form.get('occurredAt') || todayIso();
+
+      const accountingType = direction === 'income'
+        ? 'other_income'
+        : (category === 'Nhập nguyên liệu' ? 'inventory_purchase' : 'operating_expense');
 
       appData.transactions.unshift({
         id: `tx-${Date.now()}`,
-        direction: direction,
-        accountingType: direction === 'income' ? 'other_income' : 'operating_expense',
-        category: form.get('category'),
-        amount: amount,
-        note: form.get('note') || '',
-        occurredAt: new Date().toISOString()
+        direction,
+        accountingType,
+        category,
+        amount,
+        note: String(form.get('note') || '').trim(),
+        occurredAt: new Date(dateStr).toISOString()
       });
 
       saveData();
       closeModal();
       triggerActivity('office');
-      showNotice(`Đã lưu giao dịch sổ quỹ: ${direction === 'income' ? '+' : '−'}${money.format(amount)}`);
       renderCurrentView();
+      showNotice(`Đã ghi sổ quỹ: ${direction === 'income' ? '+' : '−'}${money.format(amount)} (${category})`);
+    }
+
+    // --- BACKUP & RESTORE ---
+    function downloadJsonBackup() {
+      const blob = new Blob([JSON.stringify(appData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `MVie-Cake-Backup-${todayIso()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showNotice("Đã tải file sao lưu dữ liệu (.json) thành công!");
+    }
+
+    function restoreJsonBackup(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!parsed.ingredients || !parsed.recipes || !parsed.orders) {
+            throw new Error("File không đúng định dạng dữ liệu M’Vie Cake.");
+          }
+          appData = parsed;
+          saveData();
+          closeModal();
+          renderCurrentView();
+          showNotice("Đã khôi phục toàn bộ dữ liệu tiệm bánh thành công!");
+        } catch (err) {
+          showNotice("Lỗi đọc file sao lưu: " + err.message, true);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function resetToSampleData() {
+      if (!confirm("Khôi phục về dữ liệu mẫu ban đầu của M’Vie Cake? (Dữ liệu bạn vừa nhập thêm sẽ được đặt lại)")) return;
+      appData = JSON.parse(JSON.stringify(defaultData));
+      saveData();
+      closeModal();
+      renderCurrentView();
+      showNotice("Đã khôi phục dữ liệu mẫu M’Vie Cake!");
     }
 
     // --- INITIALIZE ---
     window.addEventListener('DOMContentLoaded', () => {
-      renderCurrentView();
+      setView('home');
     });
   </script>
 </body>
