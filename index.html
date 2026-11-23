@@ -2,10 +2,14 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#e8f7ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>M’Vie Cake — Bakery Tycoon | Quản Trị Tiệm Bánh</title>
   <meta name="description" content="Hệ thống quản lý kho nguyên liệu, định lượng công thức, sản xuất, đơn hàng và kế toán quản trị cho M’Vie Cake.">
   <link rel="icon" href="mvie-logo.png">
+  <link rel="apple-touch-icon" href="mvie-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,9 +17,12 @@
   <style>
     :root {
       font-family: 'Be Vietnam Pro', Inter, ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* Fix Modal Overlay so it opens cleanly in the center of the screen */
+    /* =====================================================================
+       1. MODAL & BOTTOM SHEET (TỐI ƯU TUYỆT ĐỐI CHO ĐIỆN THOẠI)
+       ===================================================================== */
     .modal-backdrop {
       position: fixed !important;
       z-index: 200 !important;
@@ -26,12 +33,13 @@
       justify-content: center !important;
       background: rgba(23, 53, 77, 0.62) !important;
       backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       animation: fadeIn 0.18s ease-out;
     }
 
     .modal {
       width: min(740px, 100%) !important;
-      max-height: calc(100vh - 40px) !important;
+      max-height: calc(100dvh - 40px) !important;
       margin: 0 !important;
       display: flex !important;
       flex-direction: column !important;
@@ -45,15 +53,17 @@
 
     .modal > header {
       flex-shrink: 0;
-      padding: 16px 22px !important;
+      padding: 15px 20px !important;
       background: #e8f7ff !important;
       border-bottom: 2px solid #9bc9e2 !important;
+      position: relative;
     }
 
     .modal-body {
       overflow-y: auto !important;
-      max-height: calc(100vh - 130px) !important;
-      padding: 22px !important;
+      -webkit-overflow-scrolling: touch;
+      max-height: calc(100dvh - 130px) !important;
+      padding: 20px !important;
     }
 
     @keyframes fadeIn {
@@ -61,25 +71,27 @@
       to { opacity: 1; }
     }
     @keyframes slideUp {
-      from { opacity: 0; transform: translateY(14px) scale(0.98); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Toast notification floating top-right */
+    /* Toast notification */
     .toast-notice {
       position: fixed;
-      top: 18px;
-      right: 18px;
-      z-index: 300;
+      top: 14px;
+      right: 14px;
+      left: 14px;
       max-width: 420px;
-      padding: 14px 18px;
+      margin-left: auto;
+      z-index: 350;
+      padding: 13px 16px;
       border: 2.5px solid #2e7d52;
       background: #ecfdf3;
       color: #154c2e;
       border-radius: 16px;
       font-weight: 800;
-      font-size: 0.88rem;
-      box-shadow: 4px 5px 0 rgba(23, 53, 77, 0.18);
+      font-size: 0.86rem;
+      box-shadow: 0 10px 25px rgba(23, 53, 77, 0.22);
       display: flex;
       align-items: center;
       gap: 10px;
@@ -91,81 +103,123 @@
       color: #8c2440;
     }
 
-    /* Sub-navigation & Search Bar */
+    /* =====================================================================
+       2. COMPONENTS & CARDS
+       ===================================================================== */
     .filter-bar {
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 10px;
+      margin-bottom: 14px;
     }
     .search-box {
       flex: 1;
       min-width: 220px;
-      max-width: 360px;
+      max-width: 380px;
       position: relative;
     }
     .search-box input {
-      min-height: 42px;
-      padding-left: 36px;
+      min-height: 44px;
+      padding-left: 38px;
       border-radius: 12px;
       border: 2px solid #9bc9e2;
-      font-size: 0.88rem;
+      font-size: 0.92rem;
       font-weight: 600;
     }
     .search-box::before {
       content: "🔍";
       position: absolute;
-      left: 11px;
+      left: 12px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       pointer-events: none;
     }
 
-    /* Live Calculation Preview Card inside Forms */
     .live-preview-box {
-      padding: 14px 16px;
+      padding: 13px 15px;
       border-radius: 14px;
       background: #f0f9ff;
       border: 2px dashed #5ba4cf;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 10px;
     }
     .live-preview-item small {
       display: block;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 700;
       color: #4b7896;
       text-transform: uppercase;
     }
     .live-preview-item b {
-      font-size: 1.02rem;
+      font-size: 0.98rem;
       color: #17354d;
       font-weight: 900;
     }
     .live-preview-item b.good { color: #22784b; }
     .live-preview-item b.warn { color: #c93d63; }
 
-    /* Quick money pills & hints */
-    .money-hint {
-      font-size: 0.75rem;
+    /* Quick preset chips for fast mobile entry */
+    .quick-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+    .chip-btn {
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1.5px solid #8ec2e2;
+      background: #eef8ff;
+      color: #1d5175;
+      font-size: 0.74rem;
       font-weight: 800;
-      color: #3479aa;
-      margin-top: 2px;
+      min-height: 30px;
+    }
+    .chip-btn:active {
+      background: #cce9fc;
+      transform: scale(0.97);
     }
 
-    /* Stock & Warehouse Grid */
+    /* Number Stepper (- / +) for easy thumb tapping */
+    .stepper-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .stepper-btn {
+      width: 44px;
+      height: 46px;
+      flex-shrink: 0;
+      border-radius: 10px;
+      border: 2px solid #4f8fbd;
+      background: #eef8ff;
+      color: #17354d;
+      font-size: 1.25rem;
+      font-weight: 900;
+      display: grid;
+      place-items: center;
+    }
+    .stepper-btn:active {
+      background: #cde8fa;
+    }
+    .stepper-wrap input {
+      text-align: center;
+      font-weight: 800;
+    }
+
+    /* Warehouse Grid */
     .warehouse-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
     }
     .stock-card {
-      padding: 18px;
+      padding: 16px;
       background: #fffdf9;
       border: 2px solid #9bc9e2;
       border-radius: 18px;
@@ -186,8 +240,9 @@
       gap: 8px;
     }
     .stock-head h3 {
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       font-weight: 800;
+      line-height: 1.3;
     }
     .stock-badge {
       padding: 4px 9px;
@@ -223,7 +278,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: #31566f;
       background: #f4fbff;
       padding: 10px 12px;
@@ -232,7 +287,8 @@
     .stock-meta div b {
       display: block;
       color: #17354d;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
+      margin-top: 2px;
     }
     .card-actions {
       display: flex;
@@ -240,10 +296,10 @@
       align-items: center;
     }
     .btn-sm {
-      min-height: 36px;
-      padding: 6px 12px;
-      border-radius: 10px;
-      font-size: 0.78rem;
+      min-height: 40px;
+      padding: 7px 12px;
+      border-radius: 11px;
+      font-size: 0.8rem;
       font-weight: 800;
       border: 2px solid #315f83;
       background: #fff;
@@ -252,6 +308,7 @@
       align-items: center;
       justify-content: center;
       gap: 5px;
+      text-decoration: none;
     }
     .btn-sm:hover { background: #e8f7ff; }
     .btn-sm.primary-sm {
@@ -260,13 +317,16 @@
       border-color: #2c6c99;
       flex: 1;
     }
-    .btn-sm.primary-sm:hover { background: #3b88be; }
+    .btn-sm.success-sm {
+      background: #2e8b57;
+      color: #fff;
+      border-color: #1e6b3e;
+    }
     .btn-sm.danger-sm {
       border-color: #dfa1b2;
       color: #9e2a47;
       background: #fff5f7;
     }
-    .btn-sm.danger-sm:hover { background: #ffe0e8; }
 
     /* Dynamic Line Items in Forms */
     .line-item-row {
@@ -274,53 +334,61 @@
       grid-template-columns: 1.5fr 0.9fr auto;
       gap: 8px;
       align-items: center;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+      background: #f7fcff;
+      padding: 8px;
+      border-radius: 12px;
+      border: 1.5px solid #cde4f2;
     }
     .btn-remove-line {
-      width: 38px;
-      height: 42px;
-      border-radius: 9px;
+      width: 42px;
+      height: 44px;
+      border-radius: 10px;
       border: 2px solid #dfa1b2;
       background: #fff0f3;
       color: #9e2a47;
       font-weight: 900;
-      font-size: 1.1rem;
+      font-size: 1.15rem;
     }
 
-    /* Checklist table in Produce Modal */
-    .check-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.82rem;
-      margin-top: 6px;
+    /* Checklist cards in Produce Modal */
+    .produce-check-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
     }
-    .check-table th, .check-table td {
-      padding: 8px 10px;
-      text-align: left;
-      border-bottom: 1px solid #cde2ed;
+    .produce-check-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f7fcff;
+      border: 1.5px solid #cde4f2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.83rem;
     }
-    .check-table th {
-      background: #e8f7ff;
-      font-weight: 800;
-      color: #31566f;
+    .produce-check-item.shortage {
+      background: #fff5f7;
+      border-color: #e66a88;
     }
 
     /* Alert Banner on Home */
     .low-stock-banner {
       grid-column: 1 / -1;
-      padding: 12px 18px;
+      padding: 12px 16px;
       background: #fff4f6;
       border: 2.5px solid #e66a88;
-      border-radius: 18px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
+      font-size: 0.86rem;
     }
     .low-stock-banner strong { color: #9e2a47; }
 
-    /* Recipe ingredient pills */
     .recipe-ing-list {
       display: flex;
       flex-wrap: wrap;
@@ -328,9 +396,9 @@
       margin: 10px 0 4px;
     }
     .recipe-ing-pill {
-      font-size: 0.72rem;
+      font-size: 0.73rem;
       font-weight: 700;
-      padding: 3px 8px;
+      padding: 4px 9px;
       border-radius: 8px;
       background: #edf7fb;
       border: 1px solid #bfd9e8;
@@ -339,20 +407,304 @@
 
     .order-note-tag {
       display: inline-block;
-      margin-top: 5px;
-      padding: 4px 9px;
+      margin-top: 6px;
+      padding: 5px 10px;
       background: #fff6dd;
       border: 1px solid #e6c875;
       border-radius: 8px;
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: #6e4e13;
+    }
+
+    .phone-link {
+      color: #236496;
+      font-weight: 800;
+      text-decoration: none;
+      background: #eaf6ff;
+      padding: 3px 8px;
+      border-radius: 7px;
+      border: 1px solid #b5d8f0;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* =====================================================================
+       3. MOBILE-FIRST OVERRIDES (ĐIỆN THOẠI <= 767px)
+       ===================================================================== */
+    @media (max-width: 767px) {
+      /* Ngăn iOS Safari tự động zoom khi bấm vào ô nhập liệu */
+      input, select, textarea {
+        font-size: 16px !important;
+        min-height: 46px;
+      }
+
+      .main-content {
+        padding: 10px 12px calc(92px + var(--safe-bottom)) !important;
+      }
+
+      /* Compact Mobile HUD Header */
+      .game-hud {
+        min-height: auto !important;
+        margin-bottom: 10px !important;
+        padding: 10px 12px;
+        background: #f7fcff;
+        border: 2.5px solid #67a9d5;
+        border-radius: 20px;
+        box-shadow: 4px 5px 0 #badff1;
+        display: grid !important;
+        grid-template-columns: 1fr auto auto !important;
+        align-items: center;
+        gap: 8px !important;
+      }
+      .mobile-game-brand {
+        grid-column: 1 / 2 !important;
+        min-height: auto !important;
+        justify-content: flex-start !important;
+        font-size: 1.12rem !important;
+      }
+      .mobile-game-brand img {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 12px !important;
+      }
+      .hud-date {
+        display: none !important; /* Tiết kiệm diện tích màn hình dọc trên điện thoại */
+      }
+      /* Hiển thị CẢ 2 thẻ Doanh thu & Đơn hôm nay thành 2 cột ngang gọn đẹp */
+      .hud-chip {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-height: 38px !important;
+        padding: 6px 12px !important;
+        font-size: 0.82rem !important;
+        justify-content: space-between;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+      }
+      .hud-chip + .hud-chip {
+        display: flex !important;
+      }
+      .hud-icon, .hud-avatar {
+        width: 38px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        box-shadow: 2px 2px 0 #b4dced !important;
+      }
+
+      /* Quick Action Bar ngay đầu trang chủ điện thoại */
+      .game-quest-bar {
+        grid-row: 1; /* Đưa thanh Thao tác nhanh lên ngay đầu để bấm 1 ngón cái */
+        grid-template-columns: repeat(3, 1fr) !important;
+        min-height: auto !important;
+        padding: 8px !important;
+        gap: 8px !important;
+        border-radius: 18px !important;
+      }
+      .quest {
+        min-height: 58px !important;
+        padding: 8px 4px !important;
+        border-radius: 14px !important;
+        font-size: 0.76rem !important;
+        font-weight: 800;
+        text-align: center;
+      }
+
+      /* Sân khấu Tiệm bánh 3 tầng trên điện thoại */
+      .game-stage {
+        aspect-ratio: 0.92 !important;
+      }
+      .floor-hotspot {
+        left: 3% !important;
+        width: 112px !important;
+        min-height: 48px !important;
+        padding: 6px 8px !important;
+        border-radius: 14px !important;
+      }
+      .floor-hotspot span {
+        display: grid !important;
+        width: 24px !important;
+        height: 24px !important;
+        font-size: 1.05rem;
+      }
+      .floor-hotspot b {
+        font-size: 0.72rem !important;
+      }
+
+      /* Subpage Topbar trên điện thoại */
+      .topbar {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px !important;
+        margin-bottom: 14px !important;
+        background: #f7fcff;
+        padding: 12px 14px;
+        border-radius: 18px;
+        border: 2px solid #8ec2e2;
+      }
+      .topbar h1 {
+        font-size: 1.35rem !important;
+      }
+      .top-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+      }
+      .top-actions button {
+        flex: 1;
+        min-height: 44px;
+        font-size: 0.85rem !important;
+      }
+
+      /* Search & Status Tabs trên điện thoại */
+      .filter-bar {
+        flex-direction: column-reverse;
+        align-items: stretch;
+      }
+      .search-box {
+        max-width: 100%;
+      }
+      .status-tabs {
+        margin-right: -12px !important;
+        padding-right: 12px !important;
+        padding-bottom: 6px !important;
+        -webkit-overflow-scrolling: touch;
+      }
+      .status-tabs button {
+        min-height: 40px;
+        padding: 6px 11px;
+        font-size: 0.82rem;
+      }
+
+      /* Order Cards trên điện thoại */
+      .panel-head {
+        padding: 14px 14px 10px !important;
+      }
+      .order-list {
+        padding: 0 12px 14px !important;
+      }
+      .order-card {
+        padding: 14px 0 !important;
+        gap: 12px !important;
+      }
+      .order-main {
+        grid-template-columns: 74px 1fr !important;
+        gap: 10px !important;
+        align-items: start !important;
+      }
+      .order-code {
+        min-height: 56px;
+        padding: 6px;
+        font-size: 0.8rem;
+      }
+      .order-controls {
+        grid-template-columns: 1fr 1fr !important;
+        background: #f4fbff;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid #cde2ed;
+      }
+      .order-controls > div.order-total-row {
+        grid-column: 1 / -1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 6px;
+        border-top: 1px dashed #bfd9e8;
+      }
+
+      /* Modal dạng Bottom Sheet kéo từ dưới lên trên điện thoại */
+      .modal-backdrop {
+        padding: 0 !important;
+        align-items: flex-end !important;
+      }
+      .modal {
+        width: 100% !important;
+        max-height: 92dvh !important;
+        border-radius: 24px 24px 0 0 !important;
+        border-bottom: 0 !important;
+        border-left: 0 !important;
+        border-right: 0 !important;
+      }
+      .modal > header {
+        padding: 14px 16px !important;
+        border-radius: 22px 22px 0 0 !important;
+      }
+      .modal > header h2 {
+        font-size: 1.15rem !important;
+      }
+      .modal-body {
+        max-height: calc(92dvh - 70px) !important;
+        padding: 16px 14px calc(24px + var(--safe-bottom)) !important;
+      }
+      .form-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+      }
+      .form-grid.two-col-mobile {
+        grid-template-columns: 1fr 1fr !important;
+      }
+      .line-item-row {
+        grid-template-columns: 1fr !important;
+        gap: 8px;
+        position: relative;
+        padding: 10px;
+      }
+      .line-item-row .line-qty-actions {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px;
+      }
+
+      /* Thanh điều hướng đáy (Bottom Navigation Bar) chuẩn Mobile App */
+      .mobile-nav {
+        left: 8px !important;
+        right: 8px !important;
+        bottom: calc(8px + var(--safe-bottom)) !important;
+        min-height: 64px !important;
+        padding: 5px !important;
+        grid-template-columns: repeat(6, 1fr) !important;
+        border-radius: 18px !important;
+        background: rgba(23, 53, 77, 0.96) !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(13, 38, 56, 0.4) !important;
+      }
+      .mobile-nav button {
+        min-height: 52px !important;
+        font-size: 0.64rem !important;
+        font-weight: 800 !important;
+        gap: 2px !important;
+        border-radius: 13px !important;
+        position: relative;
+      }
+      .mobile-nav button span {
+        font-size: 1.2rem !important;
+        width: auto !important;
+        height: auto !important;
+      }
+      .mobile-nav .mnav-badge {
+        position: absolute;
+        top: 3px;
+        right: 6px;
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 99px;
+        background: #f05f7b;
+        color: #fff;
+        font-size: 0.6rem;
+        font-weight: 900;
+        display: grid;
+        place-items: center;
+      }
     }
   </style>
 </head>
 <body class="antialiased">
   <div class="app-shell" id="app">
-    <!-- Sidebar -->
+    <!-- Sidebar (Desktop / Tablet) -->
     <aside class="sidebar">
       <div class="brand" style="cursor:pointer" onclick="setView('home')">
         <img src="mvie-logo.png" alt="M’Vie Cake Logo">
@@ -390,10 +742,10 @@
       </nav>
       <div class="account">
         <span>Tiệm bánh: <strong>M’Vie Cake</strong></span>
-        <small style="display:block;color:#4b7896;margin-top:2px">Lưu tự động trên trình duyệt</small>
+        <small style="display:block;color:#4b7896;margin-top:2px">Lưu tự động trên thiết bị</small>
         <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn-sm" style="font-size:0.7rem;padding:4px 8px;min-height:28px" onclick="exportDataExcel()">⬇ Excel (.xlsx)</button>
-          <button class="btn-sm" style="font-size:0.7rem;padding:4px 8px;min-height:28px" onclick="openModal('backup')">⚙️ Dữ liệu</button>
+          <button class="btn-sm" style="font-size:0.72rem;padding:4px 8px;min-height:30px" onclick="exportDataExcel()">⬇ Excel (.xlsx)</button>
+          <button class="btn-sm" style="font-size:0.72rem;padding:4px 8px;min-height:30px" onclick="openModal('backup')">⚙️ Dữ liệu</button>
         </div>
       </div>
     </aside>
@@ -404,26 +756,34 @@
       <header class="game-hud" id="hud-container">
         <div class="mobile-game-brand">
           <img src="mvie-logo.png" alt="M’Vie Cake">
-          <strong>M’Vie Cake</strong>
+          <div>
+            <strong style="display:block;line-height:1.1">M’Vie Cake</strong>
+            <small style="font-size:0.68rem;color:#4b7896;font-weight:700" id="hud-mobile-date">Hôm nay</small>
+          </div>
         </div>
         <div class="hud-date">
           <span>📅</span> <b id="hud-current-date">Hôm nay</b>
         </div>
-        <div class="hud-chip" style="cursor:pointer" onclick="setView('finance')" title="Xem báo cáo doanh thu">
-          <span>💰</span> <b id="hud-revenue">0 ₫</b>
-        </div>
-        <div class="hud-chip" style="cursor:pointer" onclick="setView('orders')" title="Xem danh sách đơn hàng">
-          <span>🧁</span> <b id="hud-today-orders">Đơn hôm nay: 0</b>
-        </div>
         <button class="hud-icon" aria-label="Xuất Excel" title="Tải báo cáo Excel 6 Sheet" onclick="exportDataExcel()">📥</button>
-        <button class="hud-avatar" aria-label="Cài đặt dữ liệu" title="Sao lưu & Khôi phục dữ liệu" onclick="openModal('backup')"><img src="mvie-logo.png" alt="Avatar"></button>
+        <button class="hud-avatar" aria-label="Cài đặt dữ liệu" title="Sao lưu & Khôi phục dữ liệu" onclick="openModal('backup')">⚙️</button>
+        <div class="hud-chip" style="cursor:pointer" onclick="setView('finance')">
+          <span style="width:auto;display:flex;align-items:center;gap:5px">💰 <small style="font-weight:700;color:#4b7896">Doanh thu:</small></span>
+          <b id="hud-revenue">0 ₫</b>
+        </div>
+        <div class="hud-chip" style="cursor:pointer" onclick="setView('orders')">
+          <span style="width:auto;display:flex;align-items:center;gap:5px">🧁 <small style="font-weight:700;color:#4b7896">Tiến độ:</small></span>
+          <b id="hud-today-orders">Đơn hôm nay: 0</b>
+        </div>
       </header>
 
       <!-- Topbar for Subpages -->
       <header class="topbar" id="subpage-topbar" style="display: none;">
-        <div>
-          <p class="eyebrow" id="topbar-eyebrow">Quản trị vận hành · M'Vie Cake</p>
-          <h1 id="topbar-title">Bảng order online</h1>
+        <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+          <div>
+            <p class="eyebrow" id="topbar-eyebrow">Quản trị vận hành · M'Vie Cake</p>
+            <h1 id="topbar-title">Bảng order online</h1>
+          </div>
+          <button class="btn-sm" onclick="openModal('backup')" title="Sao lưu & Excel" style="flex-shrink:0">⚙️ Dữ liệu</button>
         </div>
         <div class="top-actions">
           <span class="live-dot">Đã lưu tự động</span>
@@ -434,13 +794,33 @@
 
       <!-- VIEW: HOME (BAKERY GAME STAGE) -->
       <section id="view-home" class="game-dashboard" aria-label="Màn hình quản lý tiệm bánh dạng game">
+        <!-- Quick Action Bar (Placed conveniently for mobile thumb access) -->
+        <div class="game-quest-bar">
+          <div class="mascot-tip">
+            <img src="mvie-logo.png" alt="Mascot M’Vie" width="52" height="52">
+            <span>Thao tác<br>nhanh:</span>
+          </div>
+          <button class="quest deliver" onclick="openModal('order')">
+            <span>➕</span>
+            <b>Tạo đơn bánh</b>
+          </button>
+          <button class="quest bake" onclick="openModal('produce')">
+            <span>👨‍🍳</span>
+            <b>Nướng bánh</b>
+          </button>
+          <button class="quest stock" onclick="openModal('stock')">
+            <span>📦</span>
+            <b>Nhập kho</b>
+          </button>
+        </div>
+
         <!-- Low Stock Alert Banner if any -->
         <div id="home-low-stock-banner" class="low-stock-banner" style="display:none">
           <div>
-            <strong>⚠️ Cảnh báo nguyên liệu sắp hết:</strong>
+            <strong>⚠️ Nguyên liệu sắp hết:</strong>
             <span id="home-low-stock-names"></span>
           </div>
-          <button class="btn-sm primary-sm" style="flex:0 0 auto" onclick="setView('warehouse')">Kiểm tra kho ngay ›</button>
+          <button class="btn-sm primary-sm" style="flex:0 0 auto;min-height:34px" onclick="setView('warehouse')">Nhập kho ›</button>
         </div>
 
         <div class="game-stage-card">
@@ -510,34 +890,15 @@
               <button onclick="setView('orders')">Xem tất cả ›</button>
             </header>
             <div id="home-recent-orders"></div>
-            <button class="create-order" onclick="openModal('order')">＋ Tạo đơn đặt bánh</button>
+            <button class="create-order" onclick="openModal('order')">＋ Tạo đơn đặt bánh mới</button>
           </section>
         </aside>
-
-        <div class="game-quest-bar">
-          <div class="mascot-tip">
-            <img src="mvie-logo.png" alt="Mascot M’Vie" width="58" height="58">
-            <span>Thao tác<br>nhanh:</span>
-          </div>
-          <button class="quest stock" onclick="openModal('stock')">
-            <span>📦</span>
-            <b>Nhập nguyên liệu</b>
-          </button>
-          <button class="quest bake" onclick="openModal('produce')">
-            <span>👨‍🍳</span>
-            <b>Ra lò mẻ bánh</b>
-          </button>
-          <button class="quest deliver" onclick="openModal('transaction')">
-            <span>💰</span>
-            <b>Ghi sổ thu chi</b>
-          </button>
-        </div>
       </section>
 
       <!-- VIEW: ORDERS -->
       <section id="view-orders" class="section top-section" style="display: none;">
         <div class="filter-bar">
-          <div class="status-tabs" role="group" style="padding-bottom:0">
+          <div class="status-tabs" role="group">
             <button id="tab-all" aria-pressed="true" onclick="setOrderTab('all')">Tất cả <span id="badge-all">0</span></button>
             <button id="tab-new" onclick="setOrderTab('new')">Đơn mới <span id="badge-new">0</span></button>
             <button id="tab-making" onclick="setOrderTab('making')">Đang làm <span id="badge-making">0</span></button>
@@ -553,10 +914,10 @@
         <div class="panel order-panel">
           <div class="panel-head">
             <div>
-              <p class="eyebrow">Theo dõi tiến độ &amp; dòng tiền</p>
+              <p class="eyebrow">Chạm SĐT để gọi ngay trên điện thoại</p>
               <h2 id="orders-list-title">Đơn hàng</h2>
             </div>
-            <button class="primary" onclick="openModal('order')">＋ Tạo đơn mới</button>
+            <button class="primary compact" onclick="openModal('order')">＋ Đơn mới</button>
           </div>
           <div class="order-list" id="orders-container"></div>
         </div>
@@ -567,10 +928,10 @@
         <div class="summary-bar">
           <div>
             <p class="eyebrow">Quản lý kho tầng 1</p>
-            <h2>Tồn kho nguyên vật liệu &amp; Cảnh báo định mức</h2>
-            <p>Khi nướng bánh tại Bếp, nguyên liệu sẽ tự động trừ theo công thức (đã tính % hao hụt). Bấm <b>"＋ Nhập thêm"</b> trên từng thẻ để bổ sung hàng nhanh.</p>
+            <h2>Tồn kho nguyên vật liệu</h2>
+            <p>Bấm <b>"＋ Nhập thêm"</b> trên từng thẻ để bổ sung hàng nhanh với 1 chạm.</p>
           </div>
-          <button class="primary" onclick="openModal('stock')">＋ Nhập nguyên liệu</button>
+          <button class="primary" onclick="openModal('stock')">＋ Nhập nguyên liệu mới</button>
         </div>
 
         <div class="warehouse-grid" id="warehouse-grid-container"></div>
@@ -580,7 +941,7 @@
             <div class="panel-head">
               <div>
                 <p class="eyebrow">Nhật ký tầng 1</p>
-                <h2>Lịch sử nhập kho gần đây</h2>
+                <h2>Lịch sử nhập kho</h2>
               </div>
             </div>
             <div class="transaction-list" id="receipts-history-container"></div>
@@ -604,13 +965,10 @@
         <div class="summary-bar">
           <div>
             <p class="eyebrow">Định lượng &amp; Giá vốn chuẩn</p>
-            <h2>Tính đúng từng gram, ml, nhân công &amp; hao hụt</h2>
-            <p>Cost / bánh = (Nguyên liệu sau hao hụt + Bao bì + Nhân công + Chi phí khác) ÷ (1 − % Hao hụt mẻ) ÷ Số bánh thu được.</p>
+            <h2>Bảng Cost &amp; Tồn bánh thành phẩm</h2>
+            <p>Tự động tính nguyên liệu sau hao hụt, bao bì, nhân công và tỷ suất lãi gộp cho từng chiếc bánh.</p>
           </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="secondary" onclick="openModal('produce')">👨‍🍳 Nướng mẻ bánh</button>
-            <button class="primary" onclick="openModal('recipe')">＋ Tạo công thức</button>
-          </div>
+          <button class="primary" onclick="openModal('recipe')">＋ Tạo công thức bánh</button>
         </div>
         <div class="recipe-grid" id="recipes-container"></div>
       </section>
@@ -623,7 +981,7 @@
           </label>
           <div style="display:flex;gap:10px;flex-wrap:wrap">
             <button class="secondary" onclick="openModal('transaction')">＋ Ghi thu / chi</button>
-            <button class="primary" onclick="exportDataExcel()">⬇ Xuất Excel 6 Sheet (.xlsx)</button>
+            <button class="primary" onclick="exportDataExcel()">⬇ Xuất Excel (.xlsx)</button>
           </div>
         </div>
 
@@ -644,12 +1002,10 @@
               <div><dt>− Giá vốn bánh đã bán (COGS)</dt><dd id="tbl-cogs">0 ₫</dd></div>
               <div class="subtotal"><dt>= Lợi nhuận gộp</dt><dd id="tbl-gross">0 ₫</dd></div>
               <div><dt>+ Khoản thu khác</dt><dd id="tbl-other">0 ₫</dd></div>
-              <div><dt>− Chi phí vận hành (điện, lương, mặt bằng...)</dt><dd id="tbl-op">0 ₫</dd></div>
-              <div class="grand"><dt>= Lợi nhuận ròng trong tháng</dt><dd id="tbl-net">0 ₫</dd></div>
+              <div><dt>− Chi phí vận hành</dt><dd id="tbl-op">0 ₫</dd></div>
+              <div class="grand"><dt>= Lợi nhuận ròng</dt><dd id="tbl-net">0 ₫</dd></div>
             </dl>
-            <p class="accounting-note" id="fin-cashflow-note">
-              Tiền mua nguyên liệu chỉ ghi vào dòng tiền chi kho. Khi bánh được giao cho khách, giá vốn nguyên liệu mới kết chuyển vào COGS để không bao giờ bị trừ trùng 2 lần.
-            </p>
+            <p class="accounting-note" id="fin-cashflow-note"></p>
           </div>
 
           <div class="panel">
@@ -663,17 +1019,31 @@
       </section>
     </main>
 
-    <!-- Mobile Navigation -->
+    <!-- Mobile Bottom Navigation Bar -->
     <nav class="mobile-nav" aria-label="Điều hướng điện thoại">
-      <button id="mnav-home" onclick="setView('home')"><span>🏠</span>Trang chủ</button>
-      <button id="mnav-orders" onclick="setView('orders')"><span>📋</span>Đơn hàng</button>
-      <button id="mnav-warehouse" onclick="setView('warehouse')"><span>🏬</span>Kho tồn</button>
-      <button onclick="openModal('produce')"><span>👨‍🍳</span>Làm bánh</button>
-      <button id="mnav-cost" onclick="setView('cost')"><span>📖</span>Công thức</button>
-      <button id="mnav-finance" onclick="setView('finance')"><span>🧮</span>Kế toán</button>
+      <button id="mnav-home" onclick="setView('home')">
+        <span>🏠</span>Trang chủ
+      </button>
+      <button id="mnav-orders" onclick="setView('orders')">
+        <span>📋</span>Đơn hàng
+        <i id="mnav-orders-badge" class="mnav-badge" style="display:none">0</i>
+      </button>
+      <button id="mnav-warehouse" onclick="setView('warehouse')">
+        <span>🏬</span>Kho tồn
+        <i id="mnav-stock-badge" class="mnav-badge" style="display:none">0</i>
+      </button>
+      <button onclick="openModal('produce')">
+        <span>👨‍🍳</span>Ra lò
+      </button>
+      <button id="mnav-cost" onclick="setView('cost')">
+        <span>📖</span>Công thức
+      </button>
+      <button id="mnav-finance" onclick="setView('finance')">
+        <span>🧮</span>Kế toán
+      </button>
     </nav>
 
-    <!-- Popup Modal Container -->
+    <!-- Popup / Bottom Sheet Modal Container -->
     <div class="modal-backdrop" id="modal-container" style="display: none !important;" onclick="handleBackdropClick(event)">
       <section id="inline-form" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <header>
@@ -762,7 +1132,7 @@
           lines: [
             { ingredientId: "ing-1", quantity: 360 },
             { ingredientId: "ing-2", quantity: 180 },
-            { ingredientId: "ing-3", quantity: 180 },
+            { ingredientId: "ing-3", quantity: 240 },
             { ingredientId: "ing-4", quantity: 6 },
             { ingredientId: "ing-5", quantity: 240 }
           ]
@@ -773,7 +1143,7 @@
           id: "ord-1",
           code: "MVC-1041",
           customerName: "Chị Thảo (Lái Thiêu)",
-          phone: "0908 123 456",
+          phone: "0908123456",
           address: "125 CMT8, P. Lái Thiêu, Thuận An",
           status: "delivered",
           paymentStatus: "paid",
@@ -789,7 +1159,7 @@
           id: "ord-2",
           code: "MVC-1042",
           customerName: "Anh Minh (KDC Việt Sing)",
-          phone: "0912 888 999",
+          phone: "0912888999",
           address: "Đường D1, KDC Việt Sing, Thuận An",
           status: "making",
           paymentStatus: "partial",
@@ -808,7 +1178,7 @@
           id: "ord-3",
           code: "MVC-1043",
           customerName: "Bạn Ngọc Lan",
-          phone: "0977 321 654",
+          phone: "0977321654",
           address: "Khách ghé tiệm lấy",
           status: "new",
           paymentStatus: "unpaid",
@@ -926,25 +1296,25 @@
       const topbarSecBtn = document.getElementById('topbar-secondary-btn');
 
       if (view === 'home') {
-        hud.style.display = 'flex';
+        hud.style.display = '';
         topbar.style.display = 'none';
       } else {
         hud.style.display = 'none';
         topbar.style.display = 'flex';
         topbarSecBtn.style.display = 'none';
         if (view === 'orders') {
-          topbarTitle.textContent = 'Bảng quản lý đơn hàng';
+          topbarTitle.textContent = 'Quản lý đơn đặt bánh';
           topbarActionBtn.textContent = '＋ Tạo đơn mới';
         } else if (view === 'warehouse') {
-          topbarTitle.textContent = 'Kho nguyên vật liệu & Tồn kho';
-          topbarActionBtn.textContent = '＋ Nhập nguyên liệu';
+          topbarTitle.textContent = 'Kho nguyên vật liệu';
+          topbarActionBtn.textContent = '＋ Nhập kho';
           topbarSecBtn.style.display = 'inline-flex';
         } else if (view === 'cost') {
-          topbarTitle.textContent = 'Công thức & Giá vốn từng loại bánh';
+          topbarTitle.textContent = 'Công thức & Giá vốn bánh';
           topbarActionBtn.textContent = '＋ Công thức mới';
           topbarSecBtn.style.display = 'inline-flex';
         } else if (view === 'finance') {
-          topbarTitle.textContent = 'Phòng kế toán & Sổ quỹ tầng 3';
+          topbarTitle.textContent = 'Kế toán & Sổ quỹ';
           topbarActionBtn.textContent = '＋ Ghi thu / chi';
         }
       }
@@ -971,7 +1341,7 @@
       toast.className = `toast-notice ${isError ? 'error' : ''}`;
       toast.style.display = 'flex';
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 4000);
+      toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 3800);
     }
 
     function triggerActivity(actName) {
@@ -992,34 +1362,43 @@
 
     function updateHUD() {
       const now = new Date();
-      document.getElementById('hud-current-date').textContent = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(now);
+      const fullDateStr = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' }).format(now);
+      document.getElementById('hud-current-date').textContent = fullDateStr;
+      const mDate = document.getElementById('hud-mobile-date');
+      if (mDate) mDate.textContent = fullDateStr;
       
       const todayStr = todayIso();
-      const todayOrders = appData.orders.filter(o => o.orderedAt && o.orderedAt.slice(0, 10) === todayStr);
-      document.getElementById('hud-today-orders').textContent = `Đơn hôm nay: ${todayOrders.length}`;
+      const activeOrders = appData.orders.filter(o => o.status === 'new' || o.status === 'making' || o.status === 'ready');
+      document.getElementById('hud-today-orders').textContent = `${activeOrders.length} đơn đang xử lý`;
 
       const curMonth = curMonthIso();
       const monthDeliveredRev = appData.orders
         .filter(o => o.status === 'delivered' && o.orderedAt.slice(0, 7) === curMonth)
         .reduce((s, o) => s + Number(o.total || 0), 0);
-      document.getElementById('hud-revenue').textContent = `Doanh thu T${now.getMonth() + 1}: ${money.format(monthDeliveredRev)}`;
+      document.getElementById('hud-revenue').textContent = money.format(monthDeliveredRev);
 
       const newOrders = appData.orders.filter(o => o.status === 'new').length;
       const newBadge = document.getElementById('new-orders-count');
+      const mOrdersBadge = document.getElementById('mnav-orders-badge');
       if (newOrders > 0) {
         newBadge.textContent = newOrders;
         newBadge.style.display = 'grid';
+        if (mOrdersBadge) { mOrdersBadge.textContent = newOrders; mOrdersBadge.style.display = 'grid'; }
       } else {
         newBadge.style.display = 'none';
+        if (mOrdersBadge) mOrdersBadge.style.display = 'none';
       }
 
       const lowStockItems = appData.ingredients.filter(i => Number(i.quantity) <= Number(i.alertAt));
       const lowBadge = document.getElementById('low-stock-count');
+      const mStockBadge = document.getElementById('mnav-stock-badge');
       if (lowStockItems.length > 0) {
         lowBadge.textContent = lowStockItems.length;
         lowBadge.style.display = 'grid';
+        if (mStockBadge) { mStockBadge.textContent = lowStockItems.length; mStockBadge.style.display = 'grid'; }
       } else {
         lowBadge.style.display = 'none';
+        if (mStockBadge) mStockBadge.style.display = 'none';
       }
     }
 
@@ -1035,12 +1414,11 @@
       document.getElementById('summary-ready').textContent = readyCount;
       document.getElementById('summary-delivered').textContent = deliveredCount;
 
-      // Low stock alert banner
       const lowStockItems = appData.ingredients.filter(i => Number(i.quantity) <= Number(i.alertAt));
       const banner = document.getElementById('home-low-stock-banner');
       if (lowStockItems.length > 0) {
         banner.style.display = 'flex';
-        document.getElementById('home-low-stock-names').textContent = lowStockItems.map(i => `${i.name} (còn ${numFmt.format(i.quantity)}${i.unit})`).join(', ');
+        document.getElementById('home-low-stock-names').textContent = lowStockItems.map(i => `${i.name} (${numFmt.format(i.quantity)}${i.unit})`).join(', ');
       } else {
         banner.style.display = 'none';
       }
@@ -1110,12 +1488,21 @@
       container.innerHTML = '';
 
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="empty"><span>🍰</span><p>Không tìm thấy đơn hàng nào phù hợp.</p></div>`;
+        container.innerHTML = `<div class="empty"><span>🍰</span><p>Không tìm thấy đơn hàng nào.</p></div>`;
         return;
       }
 
       filtered.forEach(order => {
         const profit = Number(order.total || 0) - Number(order.costOfGoods || 0);
+        const cleanPhone = (order.phone || '').replace(/\s+/g, '');
+        const phoneHtml = cleanPhone
+          ? `<a href="tel:${cleanPhone}" class="phone-link">📞 ${order.phone}</a>`
+          : `<span style="color:#6f5a4f">Chưa có SĐT</span>`;
+
+        const quickCompleteBtn = order.status !== 'delivered' && order.status !== 'cancelled'
+          ? `<button class="btn-sm success-sm" style="min-height:34px;padding:4px 10px;font-size:0.74rem" onclick="quickDeliverOrder('${order.id}')">✅ Giao xong &amp; Thu đủ</button>`
+          : '';
+
         const card = document.createElement('article');
         card.className = 'order-card';
         card.innerHTML = `
@@ -1125,18 +1512,23 @@
               <span>${dateFormat.format(new Date(order.orderedAt))}</span>
             </div>
             <div>
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
                 <h3>${order.customerName}</h3>
-                <button class="btn-sm danger-sm" style="min-height:24px;padding:2px 7px;font-size:0.68rem" onclick="deleteOrder('${order.id}')" title="Xóa đơn này">Xóa</button>
+                <button class="btn-sm danger-sm" style="min-height:26px;padding:2px 8px;font-size:0.7rem" onclick="deleteOrder('${order.id}')">Xóa</button>
               </div>
-              <p style="font-weight:700;color:#17354d">${order.items.map(x => `${x.qty} × ${x.name}`).join(' + ')}</p>
-              <small>📞 ${order.phone || 'Chưa có SĐT'} · 📍 ${order.address || 'Nhận tại tiệm'}</small>
-              ${(order.shippingFee || order.discount) ? `<small style="display:block;color:#4b7896;margin-top:2px">Ship: +${money.format(order.shippingFee || 0)} · Giảm giá: −${money.format(order.discount || 0)} · Lãi gộp đơn: <b style="color:#22784b">${money.format(profit)}</b></small>` : `<small style="display:block;color:#4b7896;margin-top:2px">Giá vốn: ${money.format(order.costOfGoods || 0)} · Lãi gộp đơn: <b style="color:#22784b">${money.format(profit)}</b></small>`}
+              <p style="font-weight:800;color:#17354d;margin:6px 0">${order.items.map(x => `${x.qty} × ${x.name}`).join(' + ')}</p>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:0.8rem">
+                ${phoneHtml}
+                <span style="color:#31566f">📍 ${order.address || 'Nhận tại tiệm'}</span>
+              </div>
+              <small style="display:block;color:#4b7896;margin-top:5px">
+                Giá vốn: ${money.format(order.costOfGoods || 0)} · Lãi gộp: <b style="color:#22784b">+${money.format(profit)}</b>
+              </small>
               ${order.note ? `<span class="order-note-tag">📝 ${order.note}</span>` : ''}
             </div>
           </div>
           <div class="order-controls">
-            <label>Trạng thái đơn
+            <label>Trạng thái
               <select onchange="updateOrderStatus('${order.id}', this.value)">
                 ${Object.entries(statusLabels).map(([id, label]) => `
                   <option value="${id}" ${order.status === id ? 'selected' : ''}>${label}</option>
@@ -1150,11 +1542,26 @@
                 `).join('')}
               </select>
             </label>
-            <strong style="font-size:1.1rem;color:#17354d">${money.format(order.total)}</strong>
+            <div class="order-total-row">
+              ${quickCompleteBtn}
+              <strong style="font-size:1.15rem;color:#b74d69;margin-left:auto">${money.format(order.total)}</strong>
+            </div>
           </div>
         `;
         container.appendChild(card);
       });
+    }
+
+    function quickDeliverOrder(orderId) {
+      const order = appData.orders.find(o => o.id === orderId);
+      if (!order) return;
+      order.status = 'delivered';
+      order.paymentStatus = 'paid';
+      saveData();
+      renderOrders();
+      updateHUD();
+      triggerActivity('office');
+      showNotice(`Đơn ${order.code}: Đã giao bánh & thu đủ ${money.format(order.total)}!`);
     }
 
     function updateOrderStatus(orderId, nextStatus) {
@@ -1162,7 +1569,6 @@
       if (!order) return;
       const prevStatus = order.status;
 
-      // Hoàn lại bánh vào kho thành phẩm nếu chuyển sang Đã hủy
       if (nextStatus === 'cancelled' && prevStatus !== 'cancelled') {
         order.items.forEach(item => {
           const rec = appData.recipes.find(r => r.id === item.recipeId || r.name === item.name);
@@ -1180,7 +1586,7 @@
       renderOrders();
       updateHUD();
       triggerActivity(nextStatus === 'making' ? 'bake' : 'office');
-      showNotice(`Đơn ${order.code}: Đã chuyển trạng thái sang "${statusLabels[nextStatus]}"`);
+      showNotice(`Đơn ${order.code}: Chuyển sang "${statusLabels[nextStatus]}"`);
     }
 
     function updateOrderPayment(orderId, paymentStatus) {
@@ -1189,14 +1595,14 @@
         order.paymentStatus = paymentStatus;
         saveData();
         renderOrders();
-        showNotice(`Đơn ${order.code}: Cập nhật thanh toán "${paymentLabels[paymentStatus]}"`);
+        showNotice(`Đơn ${order.code}: "${paymentLabels[paymentStatus]}"`);
       }
     }
 
     function deleteOrder(orderId) {
       const order = appData.orders.find(o => o.id === orderId);
       if (!order) return;
-      if (!confirm(`Bạn có chắc muốn xóa đơn hàng ${order.code} của "${order.customerName}" không?`)) return;
+      if (!confirm(`Xóa đơn hàng ${order.code} của "${order.customerName}"?`)) return;
       appData.orders = appData.orders.filter(o => o.id !== orderId);
       saveData();
       renderOrders();
@@ -1228,9 +1634,9 @@
                 </div>
                 <span class="stock-badge ${isLow ? 'low' : ''}">${isLow ? '⚠️ Sắp hết' : '✓ Đủ dùng'}</span>
               </div>
-              <div style="margin:12px 0 6px;display:flex;justify-content:space-between;align-items:baseline">
-                <strong style="font-size:1.35rem;color:${isLow ? '#9e2a47' : '#17354d'}">${numFmt.format(ing.quantity)} ${ing.unit}</strong>
-                <small style="color:#4b7896;font-weight:700">Báo động khi ≤ ${numFmt.format(ing.alertAt)} ${ing.unit}</small>
+              <div style="margin:10px 0 6px;display:flex;justify-content:space-between;align-items:baseline">
+                <strong style="font-size:1.3rem;color:${isLow ? '#9e2a47' : '#17354d'}">${numFmt.format(ing.quantity)} ${ing.unit}</strong>
+                <small style="color:#4b7896;font-weight:700">Báo khi ≤ ${numFmt.format(ing.alertAt)} ${ing.unit}</small>
               </div>
               <div class="stock-progress">
                 <div class="stock-progress-bar" style="width:${ratio}%"></div>
@@ -1251,14 +1657,13 @@
             <div class="card-actions">
               <button class="btn-sm primary-sm" onclick="openModal('stock', '${ing.id}')">＋ Nhập thêm</button>
               <button class="btn-sm" onclick="openEditIngredientModal('${ing.id}')">✏️ Sửa</button>
-              <button class="btn-sm danger-sm" onclick="deleteIngredient('${ing.id}')" title="Xóa nguyên liệu">🗑️</button>
+              <button class="btn-sm danger-sm" onclick="deleteIngredient('${ing.id}')">🗑️</button>
             </div>
           `;
           grid.appendChild(card);
         });
       }
 
-      // Render Receipts History
       const rcpContainer = document.getElementById('receipts-history-container');
       rcpContainer.innerHTML = '';
       if (!appData.receipts || appData.receipts.length === 0) {
@@ -1278,7 +1683,6 @@
         });
       }
 
-      // Render Productions History
       const prdContainer = document.getElementById('productions-history-container');
       prdContainer.innerHTML = '';
       if (!appData.productions || appData.productions.length === 0) {
@@ -1340,7 +1744,7 @@
           <div class="recipe-title">
             <div>
               <h3>${recipe.name}</h3>
-              <span>Thu được ${recipe.yieldCount} bánh/mẻ · Có sẵn: <b style="color:#22784b">${recipe.finishedStock || 0} bánh</b></span>
+              <span>${recipe.yieldCount} bánh/mẻ · Có sẵn: <b style="color:#22784b">${recipe.finishedStock || 0} bánh</b></span>
             </div>
             <b style="font-size:1.15rem;color:#b74d69">${money.format(recipe.salePrice)}</b>
           </div>
@@ -1349,23 +1753,19 @@
 
           <dl>
             <div>
-              <dt>Nguyên liệu / mẻ (${recipe. yieldCount} bánh)</dt>
+              <dt>Nguyên liệu / mẻ (${recipe.yieldCount} bánh)</dt>
               <dd>${money.format(cost.ingredientCost)}</dd>
             </div>
             <div>
-              <dt>Nhân công + Bao bì + Khác / mẻ</dt>
+              <dt>Nhân công + Bao bì + Khác</dt>
               <dd>${money.format((recipe.packagingCost || 0) + (recipe.laborCost || 0) + (recipe.otherCost || 0))}</dd>
-            </div>
-            <div>
-              <dt>Tổng chi phí 1 mẻ (gồm ${recipe.batchLossPercent || 0}% hao hụt)</dt>
-              <dd>${money.format(cost.batchCost)}</dd>
             </div>
             <div class="cost-total">
               <dt><strong>Giá vốn (Cost) / 1 bánh</strong></dt>
               <dd style="font-size:1rem">${money.format(cost.unitCost)}</dd>
             </div>
             <div>
-              <dt>Lãi gộp / 1 bánh (Biên lãi)</dt>
+              <dt>Lãi gộp / 1 bánh</dt>
               <dd class="positive">${money.format(cost.grossProfitPerUnit)} (${cost.marginPercent}%)</dd>
             </div>
           </dl>
@@ -1378,7 +1778,7 @@
     function deleteRecipe(recipeId) {
       const rec = appData.recipes.find(r => r.id === recipeId);
       if (!rec) return;
-      if (!confirm(`Bạn có chắc muốn xóa công thức "${rec.name}" không?`)) return;
+      if (!confirm(`Xóa công thức "${rec.name}"?`)) return;
       appData.recipes = appData.recipes.filter(r => r.id !== recipeId);
       saveData();
       renderCost();
@@ -1421,7 +1821,7 @@
       document.getElementById('tbl-net').textContent = money.format(net);
 
       document.getElementById('fin-cashflow-note').innerHTML = `
-        💡 <b>Dòng tiền mua nguyên liệu tháng này (${money.format(purchase)})</b> được ghi nhận riêng ở sổ nhập kho. Khi bánh giao thành công, giá vốn nguyên liệu (${money.format(cogs)}) mới trừ vào lợi nhuận để đảm bảo không bị tính trùng hai lần.
+        💡 <b>Tiền mua nguyên liệu tháng này (${money.format(purchase)})</b> nằm riêng ở sổ chi nhập kho. Khi bánh giao cho khách, giá vốn nguyên liệu (${money.format(cogs)}) mới trừ vào lợi nhuận để tránh tính trùng 2 lần.
       `;
 
       const txContainer = document.getElementById('transactions-container');
@@ -1437,9 +1837,9 @@
               <b>${item.category}</b>
               <small>${dateFormat.format(new Date(item.occurredAt))} ${item.note ? '· ' + item.note : ''}</small>
             </div>
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px">
               <strong class="${item.direction}">${item.direction === 'income' ? '+' : '−'}${money.format(item.amount)}</strong>
-              <button class="btn-sm danger-sm" style="min-height:24px;padding:2px 6px;font-size:0.65rem" onclick="deleteTransaction('${item.id}')" title="Xóa giao dịch">×</button>
+              <button class="btn-sm danger-sm" style="min-height:26px;padding:2px 7px;font-size:0.7rem" onclick="deleteTransaction('${item.id}')">×</button>
             </div>
           `;
           txContainer.appendChild(row);
@@ -1448,7 +1848,7 @@
     }
 
     function deleteTransaction(txId) {
-      if (!confirm('Xóa dòng giao dịch thu/chi này khỏi sổ quỹ?')) return;
+      if (!confirm('Xóa dòng giao dịch thu/chi này?')) return;
       appData.transactions = appData.transactions.filter(t => t.id !== txId);
       saveData();
       renderFinance();
@@ -1546,9 +1946,7 @@
             ["Lợi nhuận gộp", revenue - cogs],
             ["Thu khác", otherIncome],
             ["Chi phí vận hành", operating],
-            ["Lợi nhuận ròng", revenue - cogs + otherIncome - operating],
-            [],
-            ["Ghi chú", "Tiền mua nguyên liệu nằm trong dòng tiền; giá vốn chỉ ghi nhận khi bánh bán ra để tránh tính trùng."]
+            ["Lợi nhuận ròng", revenue - cogs + otherIncome - operating]
           ]
         },
         {
@@ -1604,11 +2002,11 @@
       a.click();
       URL.revokeObjectURL(url);
       triggerActivity('office');
-      showNotice(`Đã xuất file Excel 6 Sheet (MVie-Cake-Bao-Cao-${month}.xlsx)!`);
+      showNotice(`Đã tải báo cáo Excel 6 Sheet (MVie-Cake-Bao-Cao-${month}.xlsx)!`);
     }
 
     // =========================================================================
-    // 5. HỆ THỐNG MODAL NHẬP LIỆU THÔNG MINH & DỄ DÙNG
+    // 5. HỆ THỐNG MODAL / BOTTOM SHEET NHẬP LIỆU DỄ BẤM TRÊN ĐIỆN THOẠI
     // =========================================================================
     function handleBackdropClick(e) {
       if (e.target.id === 'modal-container') closeModal();
@@ -1623,6 +2021,23 @@
       container.style.setProperty('display', 'none', 'important');
     }
 
+    function setInputVal(id, val, callback) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.value = val;
+        if (callback) callback();
+      }
+    }
+
+    function stepInputVal(id, delta, min = 1, callback) {
+      const el = document.getElementById(id);
+      if (el) {
+        const cur = parseFloat(el.value) || 0;
+        el.value = Math.max(min, cur + delta);
+        if (callback) callback();
+      }
+    }
+
     function openModal(name, extraParam = null) {
       const container = document.getElementById('modal-container');
       const title = document.getElementById('modal-title');
@@ -1634,8 +2049,8 @@
       // A. MODAL NHẬP KHO NGUYÊN LIỆU
       // -----------------------------------------------------------------------
       if (name === 'stock') {
-        eyebrow.textContent = 'Tầng 1 · Quản lý kho nguyên liệu';
-        title.textContent = 'Nhập nguyên vật liệu vào kho';
+        eyebrow.textContent = 'Tầng 1 · Nhập kho nhanh';
+        title.textContent = 'Nhập nguyên vật liệu';
         const preselectedIng = extraParam ? appData.ingredients.find(i => i.id === extraParam) : null;
 
         body.innerHTML = `
@@ -1646,7 +2061,7 @@
                 <option value="">＋ Thêm nguyên liệu hoàn toàn mới...</option>
                 ${appData.ingredients.map(i => `
                   <option value="${i.id}" ${preselectedIng && preselectedIng.id === i.id ? 'selected' : ''}>
-                    ${i.name} (Đang tồn: ${numFmt.format(i.quantity)} ${i.unit})
+                    ${i.name} (Tồn: ${numFmt.format(i.quantity)} ${i.unit})
                   </option>
                 `).join('')}
               </select>
@@ -1668,50 +2083,61 @@
             </div>
 
             <div class="form-grid">
-              <label class="field">
-                <span>Tổng lượng nhập đợt này *</span>
-                <input name="quantity" id="stock-qty" type="number" min="0.01" step="0.01" required value="${preselectedIng ? preselectedIng.packSize : 1000}" oninput="updateStockPreview()">
-              </label>
-              <label class="field">
-                <span>Tổng số tiền trả cho đợt nhập này (VND) *</span>
-                <input name="purchaseTotal" id="stock-total" type="number" min="0" step="500" required value="${preselectedIng ? preselectedIng.purchasePrice : 25000}" oninput="updateStockPreview()">
-              </label>
+              <div class="field">
+                <span>Lượng nhập đợt này *</span>
+                <input name="quantity" id="stock-qty" type="number" inputmode="decimal" min="0.01" step="0.01" required value="${preselectedIng ? preselectedIng.packSize : 1000}" oninput="updateStockPreview()">
+                <div class="quick-chips">
+                  <button type="button" class="chip-btn" onclick="setInputVal('stock-qty', 500, updateStockPreview)">500</button>
+                  <button type="button" class="chip-btn" onclick="setInputVal('stock-qty', 1000, updateStockPreview)">1.000</button>
+                  <button type="button" class="chip-btn" onclick="setInputVal('stock-qty', 2000, updateStockPreview)">2.000</button>
+                  <button type="button" class="chip-btn" onclick="setInputVal('stock-qty', 5000, updateStockPreview)">5.000</button>
+                </div>
+              </div>
+              <div class="field">
+                <span>Tổng tiền đợt nhập này (VND) *</span>
+                <input name="purchaseTotal" id="stock-total" type="number" inputmode="numeric" min="0" step="500" required value="${preselectedIng ? preselectedIng.purchasePrice : 25000}" oninput="updateStockPreview()">
+                <div class="quick-chips">
+                  <button type="button" class="chip-btn" onclick="stepInputVal('stock-total', 10000, 0, updateStockPreview)">+10k</button>
+                  <button type="button" class="chip-btn" onclick="stepInputVal('stock-total', 50000, 0, updateStockPreview)">+50k</button>
+                  <button type="button" class="chip-btn" onclick="stepInputVal('stock-total', 100000, 0, updateStockPreview)">+100k</button>
+                </div>
+              </div>
             </div>
 
-            <div class="form-grid">
+            <div class="form-grid two-col-mobile">
               <label class="field">
-                <span>Quy cách 1 gói / hộp chuẩn</span>
-                <input name="packSize" id="stock-pack" type="number" min="0.01" step="0.01" required value="${preselectedIng ? preselectedIng.packSize : 1000}" oninput="updateStockPreview()">
+                <span>Quy cách 1 gói chuẩn</span>
+                <input name="packSize" id="stock-pack" type="number" inputmode="decimal" min="0.01" step="0.01" required value="${preselectedIng ? preselectedIng.packSize : 1000}" oninput="updateStockPreview()">
               </label>
               <label class="field">
-                <span>Hao hụt tự nhiên (%)</span>
-                <input name="lossPercent" id="stock-loss" type="number" min="0" max="95" step="0.5" value="${preselectedIng ? preselectedIng.lossPercent : 2}" oninput="updateStockPreview()">
+                <span>Hao hụt (%)</span>
+                <input name="lossPercent" id="stock-loss" type="number" inputmode="decimal" min="0" max="95" step="0.5" value="${preselectedIng ? preselectedIng.lossPercent : 2}" oninput="updateStockPreview()">
               </label>
               <label class="field">
-                <span>Cảnh báo sắp hết khi tồn ≤</span>
-                <input name="alertAt" id="stock-alert" type="number" min="0" step="1" value="${preselectedIng ? preselectedIng.alertAt : 500}">
+                <span>Báo sắp hết khi ≤</span>
+                <input name="alertAt" id="stock-alert" type="number" inputmode="decimal" min="0" step="1" value="${preselectedIng ? preselectedIng.alertAt : 500}">
               </label>
               <label class="field">
                 <span>Nhà cung cấp</span>
-                <input name="supplier" id="stock-supplier" placeholder="Tên đại lý / cửa hàng" value="${preselectedIng ? preselectedIng.supplier : ''}">
+                <input name="supplier" id="stock-supplier" placeholder="Tên đại lý" value="${preselectedIng ? preselectedIng.supplier : ''}">
               </label>
             </div>
 
             <div class="live-preview-box" id="stock-live-preview"></div>
 
-            <button class="primary submit" type="submit">📦 Xác nhận nhập kho &amp; Ghi sổ chi</button>
+            <button class="primary submit" type="submit">📦 Xác nhận nhập kho</button>
           </form>
         `;
         updateStockPreview();
       }
 
       // -----------------------------------------------------------------------
-      // B. MODAL TẠO / SỬA CÔNG THỨC BÁNH (CÓ LIVE COST PREVIEW)
+      // B. MODAL TẠO / SỬA CÔNG THỨC BÁNH
       // -----------------------------------------------------------------------
       else if (name === 'recipe') {
         const editRec = extraParam ? appData.recipes.find(r => r.id === extraParam) : null;
-        eyebrow.textContent = 'Định lượng chuẩn · Tính giá vốn tự động';
-        title.textContent = editRec ? `Chỉnh sửa công thức: ${editRec.name}` : 'Tạo công thức bánh mới';
+        eyebrow.textContent = 'Định lượng chuẩn · Tự tính Cost';
+        title.textContent = editRec ? `Sửa: ${editRec.name}` : 'Tạo công thức bánh mới';
 
         const initialLines = editRec && editRec.lines?.length
           ? editRec.lines
@@ -1724,48 +2150,52 @@
                 <span>Tên loại bánh *</span>
                 <input name="name" required placeholder="Ví dụ: Bento Kem Dâu" value="${editRec ? editRec.name : ''}">
               </label>
-              <label class="field">
+              <div class="field">
                 <span>Số bánh thu được / 1 mẻ *</span>
-                <input name="yieldCount" id="rec-yield" type="number" min="1" step="1" value="${editRec ? editRec.yieldCount : 4}" required oninput="updateRecipeLiveCost()">
-              </label>
+                <div class="stepper-wrap">
+                  <button type="button" class="stepper-btn" onclick="stepInputVal('rec-yield', -1, 1, updateRecipeLiveCost)">−</button>
+                  <input name="yieldCount" id="rec-yield" type="number" inputmode="numeric" min="1" step="1" value="${editRec ? editRec.yieldCount : 4}" required oninput="updateRecipeLiveCost()">
+                  <button type="button" class="stepper-btn" onclick="stepInputVal('rec-yield', 1, 1, updateRecipeLiveCost)">＋</button>
+                </div>
+              </div>
             </div>
 
-            <div class="form-grid">
+            <div class="form-grid two-col-mobile">
               <label class="field">
-                <span>Giá bán lẻ / 1 bánh (VND) *</span>
-                <input name="salePrice" id="rec-price" type="number" min="0" step="1000" value="${editRec ? editRec.salePrice : 135000}" required oninput="updateRecipeLiveCost()">
+                <span>Giá bán lẻ / 1 bánh *</span>
+                <input name="salePrice" id="rec-price" type="number" inputmode="numeric" min="0" step="1000" value="${editRec ? editRec.salePrice : 135000}" required oninput="updateRecipeLiveCost()">
               </label>
               <label class="field">
-                <span>Hao hụt cả mẻ khi nướng (%)</span>
-                <input name="batchLossPercent" id="rec-loss" type="number" min="0" max="90" step="0.5" value="${editRec ? editRec.batchLossPercent : 4}" oninput="updateRecipeLiveCost()">
+                <span>Hao hụt mẻ (%)</span>
+                <input name="batchLossPercent" id="rec-loss" type="number" inputmode="decimal" min="0" max="90" step="0.5" value="${editRec ? editRec.batchLossPercent : 4}" oninput="updateRecipeLiveCost()">
               </label>
               <label class="field">
-                <span>Chi phí nhân công / 1 mẻ</span>
-                <input name="laborCost" id="rec-labor" type="number" min="0" step="1000" value="${editRec ? editRec.laborCost : 40000}" oninput="updateRecipeLiveCost()">
+                <span>Nhân công / mẻ</span>
+                <input name="laborCost" id="rec-labor" type="number" inputmode="numeric" min="0" step="1000" value="${editRec ? editRec.laborCost : 40000}" oninput="updateRecipeLiveCost()">
               </label>
               <label class="field">
-                <span>Chi phí hộp, đế, muỗng, nến / 1 mẻ</span>
-                <input name="packagingCost" id="rec-pack" type="number" min="0" step="1000" value="${editRec ? editRec.packagingCost : 28000}" oninput="updateRecipeLiveCost()">
+                <span>Hộp &amp; Bao bì / mẻ</span>
+                <input name="packagingCost" id="rec-pack" type="number" inputmode="numeric" min="0" step="1000" value="${editRec ? editRec.packagingCost : 28000}" oninput="updateRecipeLiveCost()">
               </label>
               <label class="field">
-                <span>Chi phí điện, lò nướng, khác / 1 mẻ</span>
-                <input name="otherCost" id="rec-other" type="number" min="0" step="1000" value="${editRec ? editRec.otherCost : 8000}" oninput="updateRecipeLiveCost()">
+                <span>Điện &amp; Khác / mẻ</span>
+                <input name="otherCost" id="rec-other" type="number" inputmode="numeric" min="0" step="1000" value="${editRec ? editRec.otherCost : 8000}" oninput="updateRecipeLiveCost()">
               </label>
               <label class="field">
-                <span>Số bánh thành phẩm đang có sẵn</span>
-                <input name="finishedStock" type="number" min="0" step="1" value="${editRec ? editRec.finishedStock : 0}">
+                <span>Bánh có sẵn hiện tại</span>
+                <input name="finishedStock" type="number" inputmode="numeric" min="0" step="1" value="${editRec ? editRec.finishedStock : 0}">
               </label>
             </div>
 
             <fieldset>
-              <legend>Định lượng nguyên liệu cho 1 mẻ bánh</legend>
+              <legend>Nguyên liệu cho 1 mẻ bánh</legend>
               <div id="recipe-lines-container"></div>
-              <button type="button" class="btn-sm" style="margin-top:6px" onclick="addRecipeLineRow()">＋ Thêm dòng nguyên liệu</button>
+              <button type="button" class="btn-sm full" style="margin-top:6px" onclick="addRecipeLineRow()">＋ Thêm dòng nguyên liệu</button>
             </fieldset>
 
             <div class="live-preview-box" id="recipe-live-preview"></div>
 
-            <button class="primary submit" type="submit">💾 Lưu công thức &amp; Cập nhật bảng Cost</button>
+            <button class="primary submit" type="submit">💾 Lưu công thức bánh</button>
           </form>
         `;
 
@@ -1776,84 +2206,87 @@
       }
 
       // -----------------------------------------------------------------------
-      // C. MODAL BẾP BÁNH (SẢN XUẤT & KIỂM TRA ĐỊNH LƯỢNG TỒN KHO)
+      // C. MODAL BẾP BÁNH (SẢN XUẤT)
       // -----------------------------------------------------------------------
       else if (name === 'produce') {
         eyebrow.textContent = 'Tầng 2 · Bếp nướng bánh';
-        title.textContent = 'Sản xuất mẻ bánh mới';
+        title.textContent = 'Ra lò mẻ bánh mới';
         const defaultRecId = extraParam || appData.recipes[0]?.id || '';
 
         body.innerHTML = `
           <form class="form" onsubmit="handleProduceSubmit(event)">
-            <div class="form-grid">
-              <label class="field">
-                <span>Chọn công thức bánh *</span>
-                <select name="recipeId" id="prod-recipe" required onchange="updateProduceCheck()">
-                  ${appData.recipes.map(r => `
-                    <option value="${r.id}" ${r.id === defaultRecId ? 'selected' : ''}>
-                      ${r.name} (${r.yieldCount} bánh/mẻ · Đang có: ${r.finishedStock || 0} bánh)
-                    </option>
-                  `).join('')}
-                </select>
-              </label>
-              <label class="field">
-                <span>Số mẻ muốn nướng *</span>
-                <input name="batches" id="prod-batches" type="number" min="1" step="1" value="1" required oninput="updateProduceCheck()">
-              </label>
+            <label class="field">
+              <span>Chọn loại bánh muốn nướng *</span>
+              <select name="recipeId" id="prod-recipe" required onchange="updateProduceCheck()">
+                ${appData.recipes.map(r => `
+                  <option value="${r.id}" ${r.id === defaultRecId ? 'selected' : ''}>
+                    ${r.name} (+${r.yieldCount} bánh/mẻ · Đang có: ${r.finishedStock || 0})
+                  </option>
+                `).join('')}
+              </select>
+            </label>
+
+            <div class="field">
+              <span>Số mẻ nướng *</span>
+              <div class="stepper-wrap">
+                <button type="button" class="stepper-btn" onclick="stepInputVal('prod-batches', -1, 1, updateProduceCheck)">−</button>
+                <input name="batches" id="prod-batches" type="number" inputmode="numeric" min="1" step="1" value="1" required oninput="updateProduceCheck()">
+                <button type="button" class="stepper-btn" onclick="stepInputVal('prod-batches', 1, 1, updateProduceCheck)">＋</button>
+              </div>
             </div>
 
             <div id="produce-check-container"></div>
 
-            <label style="display:flex;align-items:center;gap:8px;font-size:0.84rem;font-weight:700;cursor:pointer">
-              <input type="checkbox" name="allowNegative" id="prod-allow-force" style="width:18px;height:18px;min-height:0">
-              <span>Cho phép nướng ngay cả khi kho thiếu nguyên liệu (tự động trừ tồn kho về 0)</span>
+            <label style="display:flex;align-items:center;gap:10px;font-size:0.84rem;font-weight:700;cursor:pointer;background:#f4fbff;padding:10px 12px;border-radius:12px">
+              <input type="checkbox" name="allowNegative" id="prod-allow-force" style="width:20px;height:20px;min-height:0;flex-shrink:0">
+              <span>Cho phép nướng ngay cả khi kho thiếu nguyên liệu</span>
             </label>
 
-            <button class="primary submit" type="submit">👨‍🍳 Bắt đầu nướng bánh &amp; Nhập kho thành phẩm</button>
+            <button class="primary submit" type="submit">👨‍🍳 Xác nhận ra lò &amp; Cộng bánh</button>
           </form>
         `;
         updateProduceCheck();
       }
 
       // -----------------------------------------------------------------------
-      // D. MODAL TẠO ĐƠN HÀNG ĐA MÓN (MULTI-ITEM ORDER)
+      // D. MODAL TẠO ĐƠN HÀNG ĐA MÓN
       // -----------------------------------------------------------------------
       else if (name === 'order') {
-        eyebrow.textContent = 'Quầy bán hàng · Tạo đơn';
-        title.textContent = 'Tạo đơn đặt bánh mới';
+        eyebrow.textContent = 'Quầy bán hàng · Tạo đơn nhanh';
+        title.textContent = 'Tạo đơn đặt bánh';
 
         body.innerHTML = `
           <form class="form" id="order-form" onsubmit="handleOrderSubmit(event)">
             <div class="form-grid">
               <label class="field">
                 <span>Tên khách hàng *</span>
-                <input name="customerName" required placeholder="Ví dụ: Chị Thảo, Anh Minh...">
+                <input name="customerName" required placeholder="Chị Thảo, Anh Minh...">
               </label>
               <label class="field">
                 <span>Số điện thoại</span>
-                <input name="phone" inputmode="tel" placeholder="0908...">
+                <input name="phone" type="tel" inputmode="tel" placeholder="0908...">
               </label>
             </div>
 
             <label class="field">
-              <span>Địa chỉ giao bánh / Giờ hẹn lấy</span>
-              <input name="address" placeholder="Số nhà, đường, phường hoặc Khách ghé tiệm lấy...">
+              <span>Địa chỉ giao / Giờ hẹn lấy</span>
+              <input name="address" placeholder="Ghé tiệm lấy hoặc địa chỉ giao...">
             </label>
 
             <fieldset>
-              <legend>Danh sách bánh khách đặt</legend>
+              <legend>Chọn bánh khách đặt</legend>
               <div id="order-items-container"></div>
-              <button type="button" class="btn-sm" style="margin-top:6px" onclick="addOrderItemRow()">＋ Thêm món bánh khác</button>
+              <button type="button" class="btn-sm full" style="margin-top:4px" onclick="addOrderItemRow()">＋ Thêm loại bánh khác vào đơn</button>
             </fieldset>
 
-            <div class="form-grid">
+            <div class="form-grid two-col-mobile">
               <label class="field">
-                <span>Phí giao hàng (Ship)</span>
-                <input name="shippingFee" id="ord-ship" type="number" min="0" step="1000" value="0" oninput="updateOrderLiveTotal()">
+                <span>Phí ship (VND)</span>
+                <input name="shippingFee" id="ord-ship" type="number" inputmode="numeric" min="0" step="1000" value="0" oninput="updateOrderLiveTotal()">
               </label>
               <label class="field">
-                <span>Giảm giá / Khuyến mãi</span>
-                <input name="discount" id="ord-discount" type="number" min="0" step="1000" value="0" oninput="updateOrderLiveTotal()">
+                <span>Giảm giá (VND)</span>
+                <input name="discount" id="ord-discount" type="number" inputmode="numeric" min="0" step="1000" value="0" oninput="updateOrderLiveTotal()">
               </label>
               <label class="field">
                 <span>Trạng thái đơn</span>
@@ -1861,27 +2294,27 @@
                   <option value="new">Đơn mới</option>
                   <option value="making" selected>Đang làm bánh</option>
                   <option value="ready">Chờ giao</option>
-                  <option value="delivered">Đã giao hoàn tất</option>
+                  <option value="delivered">Đã giao xong</option>
                 </select>
               </label>
               <label class="field">
-                <span>Trạng thái thanh toán</span>
+                <span>Thanh toán</span>
                 <select name="paymentStatus">
                   <option value="unpaid">Chưa thanh toán</option>
                   <option value="partial">Khách đã cọc</option>
-                  <option value="paid" selected>Đã thanh toán đủ</option>
+                  <option value="paid" selected>Đã thanh toán</option>
                 </select>
               </label>
             </div>
 
             <label class="field">
-              <span>Ghi chú đơn bánh (Chữ viết lên bánh, ít ngọt, nến sinh nhật...)</span>
-              <input name="note" placeholder="Ví dụ: Ghi chữ Happy Birthday Bé Na, giao trước 16h...">
+              <span>Ghi chú (Viết chữ sinh nhật, ít ngọt, giao mấy giờ...)</span>
+              <input name="note" placeholder="Ví dụ: Ghi Happy Birthday Bé Na...">
             </label>
 
             <div class="live-preview-box" id="order-live-preview"></div>
 
-            <button class="primary submit" type="submit">🧾 Xác nhận tạo đơn hàng</button>
+            <button class="primary submit" type="submit">🧾 Xác nhận tạo đơn</button>
           </form>
         `;
         addOrderItemRow(appData.recipes[0]?.id || '', 1);
@@ -1892,36 +2325,16 @@
       // E. MODAL GHI SỔ THU CHI
       // -----------------------------------------------------------------------
       else if (name === 'transaction') {
-        eyebrow.textContent = 'Tầng 3 · Phòng kế toán';
+        eyebrow.textContent = 'Tầng 3 · Sổ quỹ kế toán';
         title.textContent = 'Ghi sổ thu – chi';
         body.innerHTML = `
           <form class="form" onsubmit="handleTransactionSubmit(event)">
-            <div class="form-grid">
+            <div class="form-grid two-col-mobile">
               <label class="field">
                 <span>Loại giao dịch</span>
                 <select name="direction" id="tx-dir" onchange="onTxDirectionChange()">
                   <option value="expense">↘ Khoản chi ra</option>
-                  <option value="income">↗ Khoản thu khác vào</option>
-                </select>
-              </label>
-              <label class="field">
-                <span>Số tiền (VND) *</span>
-                <input name="amount" id="tx-amount" type="number" min="1000" step="1000" value="100000" required oninput="document.getElementById('tx-money-preview').textContent = money.format(this.value || 0)">
-                <span class="money-hint" id="tx-money-preview">100.000 ₫</span>
-              </label>
-            </div>
-
-            <div class="form-grid">
-              <label class="field">
-                <span>Nhóm danh mục</span>
-                <select name="category" id="tx-cat">
-                  <option value="Chi phí vận hành">Chi phí vận hành tiệm</option>
-                  <option value="Điện nước & Gas">Điện nước &amp; Gas</option>
-                  <option value="Lương & Phụ cấp">Lương &amp; Phụ cấp</option>
-                  <option value="Bao bì & Phụ kiện">Bao bì, hộp bánh, nến</option>
-                  <option value="Marketing & Quảng cáo">Marketing &amp; Quảng cáo</option>
-                  <option value="Nhập nguyên liệu">Nhập nguyên liệu (Chỉ vào dòng tiền)</option>
-                  <option value="Thu khác">Thu khác (Phụ kiện, nến, thiệp...)</option>
+                  <option value="income">↗ Khoản thu khác</option>
                 </select>
               </label>
               <label class="field">
@@ -1930,12 +2343,34 @@
               </label>
             </div>
 
+            <div class="field">
+              <span>Số tiền (VND) * — <b id="tx-money-preview" style="color:#b74d69">100.000 ₫</b></span>
+              <input name="amount" id="tx-amount" type="number" inputmode="numeric" min="1000" step="1000" value="100000" required oninput="document.getElementById('tx-money-preview').textContent = money.format(this.value || 0)">
+              <div class="quick-chips">
+                <button type="button" class="chip-btn" onclick="setInputVal('tx-amount', 50000, () => document.getElementById('tx-money-preview').textContent = money.format(50000))">50k</button>
+                <button type="button" class="chip-btn" onclick="setInputVal('tx-amount', 100000, () => document.getElementById('tx-money-preview').textContent = money.format(100000))">100k</button>
+                <button type="button" class="chip-btn" onclick="setInputVal('tx-amount', 200000, () => document.getElementById('tx-money-preview').textContent = money.format(200000))">200k</button>
+                <button type="button" class="chip-btn" onclick="setInputVal('tx-amount', 500000, () => document.getElementById('tx-money-preview').textContent = money.format(500000))">500k</button>
+              </div>
+            </div>
+
             <label class="field">
-              <span>Diễn giải / Ghi chú chi tiết</span>
-              <input name="note" placeholder="Ví dụ: Tiền điện tháng này, mua thêm nến sinh nhật...">
+              <span>Nhóm danh mục</span>
+              <select name="category" id="tx-cat">
+                <option value="Chi phí vận hành">Chi phí vận hành tiệm</option>
+                <option value="Điện nước & Gas">Điện nước &amp; Gas</option>
+                <option value="Lương & Phụ cấp">Lương &amp; Phụ cấp</option>
+                <option value="Bao bì & Phụ kiện">Bao bì, hộp bánh, nến</option>
+                <option value="Marketing & Quảng cáo">Marketing &amp; Quảng cáo</option>
+                <option value="Nhập nguyên liệu">Nhập nguyên liệu (Chỉ vào dòng tiền)</option>
+                <option value="Thu khác">Thu khác (Phụ kiện, nến, thiệp...)</option>
+              </select>
             </label>
 
-            <p class="form-hint">Lưu ý: Doanh thu bán bánh được tự động tính từ các <b>Đơn hàng Đã giao</b> nên bạn không cần nhập lại doanh thu đơn bánh ở đây để tránh trùng lặp.</p>
+            <label class="field">
+              <span>Nội dung ghi chú</span>
+              <input name="note" placeholder="Ví dụ: Tiền điện, mua nến sinh nhật...">
+            </label>
 
             <button class="primary submit" type="submit">💾 Lưu vào sổ quỹ</button>
           </form>
@@ -1947,7 +2382,7 @@
       // -----------------------------------------------------------------------
       else if (name === 'backup') {
         eyebrow.textContent = 'An toàn dữ liệu · M’Vie Cake';
-        title.textContent = 'Quản lý & Sao lưu dữ liệu tiệm bánh';
+        title.textContent = 'Xuất báo cáo & Sao lưu';
         body.innerHTML = `
           <div class="form">
             <div class="live-preview-box">
@@ -1959,15 +2394,15 @@
 
             <div style="display:grid;gap:10px">
               <button type="button" class="primary full" onclick="exportDataExcel()">⬇ Tải báo cáo Excel 6 Sheet (.xlsx)</button>
-              <button type="button" class="secondary full" onclick="downloadJsonBackup()">💾 Tải file Sao lưu toàn bộ dữ liệu (.json)</button>
+              <button type="button" class="secondary full" onclick="downloadJsonBackup()">💾 Tải file Sao lưu dữ liệu (.json)</button>
               
-              <label class="secondary full" style="cursor:pointer;margin:0">
-                <span>📂 Khôi phục dữ liệu từ file Sao lưu (.json)</span>
+              <label class="secondary full" style="cursor:pointer;margin:0;text-align:center">
+                <span>📂 Khôi phục từ file Sao lưu (.json)</span>
                 <input type="file" accept=".json" style="display:none" onchange="restoreJsonBackup(event)">
               </label>
 
-              <hr style="border:0;border-top:1px solid #bfd9e8;margin:8px 0">
-              <button type="button" class="btn-sm danger-sm full" style="min-height:42px" onclick="resetToSampleData()">🔄 Khôi phục lại bộ dữ liệu mẫu ban đầu</button>
+              <hr style="border:0;border-top:1px solid #bfd9e8;margin:6px 0">
+              <button type="button" class="btn-sm danger-sm full" style="min-height:44px" onclick="resetToSampleData()">🔄 Khôi phục dữ liệu mẫu ban đầu</button>
             </div>
           </div>
         `;
@@ -2001,15 +2436,15 @@
       const unit = document.getElementById('stock-unit')?.value || 'g';
       const loss = parseFloat(document.getElementById('stock-loss')?.value) || 0;
 
-      const unitPrice = total / qty; // Giá trên 1 g/ml/cái
-      const pricePerPack = unitPrice * pack; // Giá chuẩn cho 1 gói packSize
+      const unitPrice = total / qty;
+      const pricePerPack = unitPrice * pack;
       const usableQty = qty * (1 - loss / 100);
 
       box.innerHTML = `
-        <div class="live-preview-item"><small>Tổng tiền chi nhập</small><b>${money.format(total)}</b></div>
-        <div class="live-preview-item"><small>Giá quy đổi / 1 gói (${numFmt.format(pack)}${unit})</small><b class="good">${money.format(pricePerPack)}</b></div>
+        <div class="live-preview-item"><small>Tổng tiền chi</small><b>${money.format(total)}</b></div>
+        <div class="live-preview-item"><small>Giá 1 gói (${numFmt.format(pack)}${unit})</small><b class="good">${money.format(pricePerPack)}</b></div>
         <div class="live-preview-item"><small>Đơn giá / 1 ${unit}</small><b>${money.format(unitPrice)}</b></div>
-        <div class="live-preview-item"><small>Thực dùng (trừ ${loss}% hao)</small><b>${numFmt.format(usableQty)} ${unit}</b></div>
+        <div class="live-preview-item"><small>Thực dùng (−${loss}%)</small><b>${numFmt.format(usableQty)} ${unit}</b></div>
       `;
     }
 
@@ -2022,12 +2457,15 @@
       const body = document.getElementById('modal-body-content');
       container.style.setProperty('display', 'flex', 'important');
 
-      eyebrow.textContent = 'Điều chỉnh kiểm kê kho';
-      title.textContent = `Sửa thông tin: ${ing.name}`;
+      eyebrow.textContent = 'Kiểm kê & Điều chỉnh kho';
+      title.textContent = `Sửa: ${ing.name}`;
       body.innerHTML = `
         <form class="form" onsubmit="handleEditIngredientSubmit(event, '${ing.id}')">
           <div class="form-grid">
             <label class="field"><span>Tên nguyên liệu *</span><input name="name" required value="${ing.name}"></label>
+            <label class="field"><span>Tồn kho thực tế hiện tại *</span><input name="quantity" type="number" inputmode="decimal" min="0" step="0.01" required value="${ing.quantity}"></label>
+          </div>
+          <div class="form-grid two-col-mobile">
             <label class="field"><span>Đơn vị</span>
               <select name="unit">
                 <option value="g" ${ing.unit === 'g' ? 'selected' : ''}>gram (g)</option>
@@ -2035,14 +2473,13 @@
                 <option value="cái" ${ing.unit === 'cái' ? 'selected' : ''}>cái / quả</option>
               </select>
             </label>
-            <label class="field"><span>Tồn kho thực tế hiện tại *</span><input name="quantity" type="number" min="0" step="0.01" required value="${ing.quantity}"></label>
-            <label class="field"><span>Quy cách 1 gói/hộp chuẩn *</span><input name="packSize" type="number" min="0.01" step="0.01" required value="${ing.packSize}"></label>
-            <label class="field"><span>Giá mua 1 gói/hộp chuẩn (VND) *</span><input name="purchasePrice" type="number" min="0" step="500" required value="${ing.purchasePrice}"></label>
-            <label class="field"><span>Hao hụt tự nhiên (%)</span><input name="lossPercent" type="number" min="0" max="95" step="0.5" value="${ing.lossPercent || 0}"></label>
-            <label class="field"><span>Mức báo động sắp hết</span><input name="alertAt" type="number" min="0" step="1" value="${ing.alertAt || 100}"></label>
+            <label class="field"><span>Quy cách gói *</span><input name="packSize" type="number" inputmode="decimal" min="0.01" step="0.01" required value="${ing.packSize}"></label>
+            <label class="field"><span>Giá 1 gói (VND) *</span><input name="purchasePrice" type="number" inputmode="numeric" min="0" step="500" required value="${ing.purchasePrice}"></label>
+            <label class="field"><span>Hao hụt (%)</span><input name="lossPercent" type="number" inputmode="decimal" min="0" max="95" step="0.5" value="${ing.lossPercent || 0}"></label>
+            <label class="field"><span>Báo sắp hết ≤</span><input name="alertAt" type="number" inputmode="decimal" min="0" step="1" value="${ing.alertAt || 100}"></label>
             <label class="field"><span>Nhà cung cấp</span><input name="supplier" value="${ing.supplier || ''}"></label>
           </div>
-          <button class="primary submit" type="submit">💾 Lưu cập nhật kiểm kê</button>
+          <button class="primary submit" type="submit">💾 Lưu cập nhật</button>
         </form>
       `;
     }
@@ -2082,8 +2519,10 @@
             </option>
           `).join('')}
         </select>
-        <input type="number" class="rec-line-qty" min="0.01" step="0.01" placeholder="Định lượng" value="${qty}" oninput="updateRecipeLiveCost()">
-        <button type="button" class="btn-remove-line" onclick="this.parentElement.remove(); updateRecipeLiveCost();" title="Xóa dòng">×</button>
+        <div class="line-qty-actions" style="display:grid;grid-template-columns:1fr auto;gap:8px">
+          <input type="number" inputmode="decimal" class="rec-line-qty" min="0.01" step="0.01" placeholder="Lượng dùng (g/ml/cái)" value="${qty}" oninput="updateRecipeLiveCost()">
+          <button type="button" class="btn-remove-line" onclick="this.closest('.line-item-row').remove(); updateRecipeLiveCost();" title="Xóa dòng">×</button>
+        </div>
       `;
       container.appendChild(row);
     }
@@ -2107,14 +2546,14 @@
 
       const cost = calculateRecipeCost({ yieldCount, salePrice, batchLossPercent, laborCost, packagingCost, otherCost, lines });
       box.innerHTML = `
-        <div class="live-preview-item"><small>Cost nguyên liệu / mẻ</small><b>${money.format(cost.ingredientCost)}</b></div>
-        <div class="live-preview-item"><small>Tổng Cost / mẻ (${yieldCount} bánh)</small><b>${money.format(cost.batchCost)}</b></div>
-        <div class="live-preview-item"><small>Giá vốn (Cost) / 1 bánh</small><b>${money.format(cost.unitCost)}</b></div>
+        <div class="live-preview-item"><small>Nguyên liệu / mẻ</small><b>${money.format(cost.ingredientCost)}</b></div>
+        <div class="live-preview-item"><small>Tổng Cost / mẻ</small><b>${money.format(cost.batchCost)}</b></div>
+        <div class="live-preview-item"><small>Giá vốn / 1 bánh</small><b>${money.format(cost.unitCost)}</b></div>
         <div class="live-preview-item"><small>Lãi gộp / 1 bánh</small><b class="${cost.grossProfitPerUnit >= 0 ? 'good' : 'warn'}">${money.format(cost.grossProfitPerUnit)} (${cost.marginPercent}%)</b></div>
       `;
     }
 
-    // --- HELPER FUNCTIONS FOR PRODUCE MODAL ---
+    // --- HELPER FUNCTIONS FOR PRODUCE MODAL (MOBILE CARDS INSTEAD OF WIDE TABLE) ---
     function updateProduceCheck() {
       const container = document.getElementById('produce-check-container');
       if (!container) return;
@@ -2129,32 +2568,31 @@
       const cost = calculateRecipeCost(recipe);
       const totalCakes = Number(recipe.yieldCount || 1) * batches;
 
-      let rowsHtml = '';
+      let itemsHtml = '';
       (recipe.lines || []).forEach(line => {
         const ing = appData.ingredients.find(i => i.id === line.ingredientId);
         if (!ing) return;
         const needed = effectiveQuantity(line.quantity, ing.lossPercent) * batches;
         const enough = Number(ing.quantity) >= needed;
-        rowsHtml += `
-          <tr>
-            <td><b>${ing.name}</b></td>
-            <td>${numFmt.format(needed)} ${ing.unit}</td>
-            <td>${numFmt.format(ing.quantity)} ${ing.unit}</td>
-            <td style="font-weight:800;color:${enough ? '#22784b' : '#c93d63'}">${enough ? '✓ Đủ' : '⚠️ Thiếu ' + numFmt.format(needed - ing.quantity) + ' ' + ing.unit}</td>
-          </tr>
+        itemsHtml += `
+          <div class="produce-check-item ${enough ? '' : 'shortage'}">
+            <div>
+              <b>${ing.name}</b>
+              <small style="display:block;color:#4b7896">Cần: <b>${numFmt.format(needed)} ${ing.unit}</b> · Kho có: ${numFmt.format(ing.quantity)} ${ing.unit}</small>
+            </div>
+            <span style="font-weight:900;color:${enough ? '#22784b' : '#c93d63'};white-space:nowrap">
+              ${enough ? '✓ Đủ' : '⚠️ Thiếu ' + numFmt.format(needed - ing.quantity) + ing.unit}
+            </span>
+          </div>
         `;
       });
 
       container.innerHTML = `
-        <div class="live-preview-box" style="margin-bottom:10px">
+        <div class="live-preview-box">
           <div class="live-preview-item"><small>Sản lượng ra lò</small><b class="good">+${totalCakes} bánh</b></div>
-          <div class="live-preview-item"><small>Tổng Cost mẻ nướng</small><b>${money.format(cost.batchCost * batches)}</b></div>
-          <div class="live-preview-item"><small>Giá vốn / 1 bánh</small><b>${money.format(cost.unitCost)}</b></div>
+          <div class="live-preview-item"><small>Tổng Cost mẻ</small><b>${money.format(cost.batchCost * batches)}</b></div>
         </div>
-        <table class="check-table">
-          <thead><tr><th>Nguyên liệu</th><th>Cần dùng (gồm hao hụt)</th><th>Kho đang có</th><th>Trạng thái</th></tr></thead>
-          <tbody>${rowsHtml || '<tr><td colspan="4">Công thức chưa có nguyên liệu</td></tr>'}</tbody>
-        </table>
+        <div class="produce-check-list">${itemsHtml}</div>
       `;
     }
 
@@ -2168,12 +2606,14 @@
         <select class="ord-item-rec" onchange="updateOrderLiveTotal()">
           ${appData.recipes.map(r => `
             <option value="${r.id}" ${r.id === selectedRecipeId ? 'selected' : ''}>
-              ${r.name} — ${money.format(r.salePrice)} (Tồn: ${r.finishedStock || 0})
+              ${r.name} — ${money.format(r.salePrice)} (Có: ${r.finishedStock || 0})
             </option>
           `).join('')}
         </select>
-        <input type="number" class="ord-item-qty" min="1" step="1" value="${qty}" placeholder="SL" oninput="updateOrderLiveTotal()">
-        <button type="button" class="btn-remove-line" onclick="if(document.querySelectorAll('#order-items-container .line-item-row').length > 1){this.parentElement.remove(); updateOrderLiveTotal();}" title="Xóa món">×</button>
+        <div class="line-qty-actions" style="display:grid;grid-template-columns:1fr auto;gap:8px">
+          <input type="number" inputmode="numeric" class="ord-item-qty" min="1" step="1" value="${qty}" placeholder="Số lượng" oninput="updateOrderLiveTotal()">
+          <button type="button" class="btn-remove-line" onclick="if(document.querySelectorAll('#order-items-container .line-item-row').length > 1){this.closest('.line-item-row').remove(); updateOrderLiveTotal();}" title="Xóa món">×</button>
+        </div>
       `;
       container.appendChild(row);
     }
@@ -2199,9 +2639,9 @@
 
       box.innerHTML = `
         <div class="live-preview-item"><small>Tiền bánh</small><b>${money.format(subtotal)}</b></div>
-        <div class="live-preview-item"><small>Giá vốn bánh (COGS)</small><b>${money.format(totalCogs)}</b></div>
-        <div class="live-preview-item"><small>Tổng khách thanh toán</small><b style="color:#b74d69">${money.format(grandTotal)}</b></div>
-        <div class="live-preview-item"><small>Lãi gộp đơn hàng</small><b class="good">+${money.format(estProfit)}</b></div>
+        <div class="live-preview-item"><small>Giá vốn (COGS)</small><b>${money.format(totalCogs)}</b></div>
+        <div class="live-preview-item"><small>Khách thanh toán</small><b style="color:#b74d69">${money.format(grandTotal)}</b></div>
+        <div class="live-preview-item"><small>Lãi gộp đơn này</small><b class="good">+${money.format(estProfit)}</b></div>
       `;
     }
 
@@ -2209,11 +2649,7 @@
       const dir = document.getElementById('tx-dir')?.value;
       const cat = document.getElementById('tx-cat');
       if (!cat) return;
-      if (dir === 'income') {
-        cat.value = 'Thu khác';
-      } else {
-        cat.value = 'Chi phí vận hành';
-      }
+      cat.value = dir === 'income' ? 'Thu khác' : 'Chi phí vận hành';
     }
 
     // =========================================================================
@@ -2232,7 +2668,6 @@
       const alertAt = parseFloat(form.get('alertAt')) || 0;
       const supplier = String(form.get('supplier') || '').trim();
 
-      // Quy đổi chuẩn: Giá 1 gói (packSize) = (Tổng tiền đợt nhập / Tổng lượng nhập) * packSize
       const unitPricePerPack = (purchaseTotal / qty) * packSize;
 
       let targetIng = existingId
@@ -2251,14 +2686,9 @@
       } else {
         targetIng = {
           id: `ing-${Date.now()}`,
-          name,
-          unit,
-          quantity: qty,
-          packSize,
+          name, unit, quantity: qty, packSize,
           purchasePrice: Math.round(unitPricePerPack),
-          lossPercent,
-          alertAt,
-          supplier
+          lossPercent, alertAt, supplier
         };
         appData.ingredients.push(targetIng);
       }
@@ -2269,10 +2699,7 @@
         id: `rcp-${Date.now()}`,
         ingredientId: targetIng.id,
         ingredientName: targetIng.name,
-        quantity: qty,
-        unit,
-        purchaseTotal,
-        supplier,
+        quantity: qty, unit, purchaseTotal, supplier,
         receivedAt: now
       });
 
@@ -2290,7 +2717,7 @@
       closeModal();
       triggerActivity('stock');
       renderCurrentView();
-      showNotice(`Đã nhập kho +${numFmt.format(qty)}${unit} "${targetIng.name}" (Đơn giá gói: ${money.format(unitPricePerPack)})`);
+      showNotice(`Đã nhập kho +${numFmt.format(qty)}${unit} "${targetIng.name}"!`);
     }
 
     function handleRecipeSubmit(e, editId = '') {
@@ -2313,15 +2740,13 @@
       });
 
       if (lines.length === 0) {
-        showNotice('Vui lòng chọn ít nhất 1 nguyên liệu định lượng cho công thức bánh!', true);
+        showNotice('Vui lòng chọn ít nhất 1 nguyên liệu!', true);
         return;
       }
 
       if (editId) {
         const rec = appData.recipes.find(r => r.id === editId);
-        if (rec) {
-          Object.assign(rec, { name, yieldCount, salePrice, laborCost, packagingCost, otherCost, batchLossPercent, finishedStock, lines });
-        }
+        if (rec) Object.assign(rec, { name, yieldCount, salePrice, laborCost, packagingCost, otherCost, batchLossPercent, finishedStock, lines });
       } else {
         appData.recipes.push({
           id: `rec-${Date.now()}`,
@@ -2333,7 +2758,7 @@
       closeModal();
       triggerActivity('office');
       renderCurrentView();
-      showNotice(`Đã lưu công thức bánh "${name}" thành công!`);
+      showNotice(`Đã lưu công thức "${name}"!`);
     }
 
     function handleProduceSubmit(e) {
@@ -2346,19 +2771,17 @@
       const recipe = appData.recipes.find(r => r.id === recipeId);
       if (!recipe) return;
 
-      // Kiểm tra tồn kho trước khi trừ
       if (!allowForce) {
         for (const line of (recipe.lines || [])) {
           const ing = appData.ingredients.find(i => i.id === line.ingredientId);
           const needed = ing ? effectiveQuantity(line.quantity, ing.lossPercent) * batches : 0;
           if (ing && Number(ing.quantity) < needed) {
-            showNotice(`Kho thiếu "${ing.name}" (Cần ${numFmt.format(needed)}${ing.unit}, chỉ còn ${numFmt.format(ing.quantity)}${ing.unit}). Hãy nhập thêm kho hoặc tích chọn cho phép nướng!`, true);
+            showNotice(`Kho thiếu "${ing.name}"! Hãy tích chọn cho phép nướng hoặc nhập thêm kho.`, true);
             return;
           }
         }
       }
 
-      // Trừ kho theo lượng thực dùng (gồm hao hụt)
       (recipe.lines || []).forEach(line => {
         const ing = appData.ingredients.find(i => i.id === line.ingredientId);
         if (ing) {
@@ -2386,7 +2809,7 @@
       closeModal();
       triggerActivity('bake');
       renderCurrentView();
-      showNotice(`Ra lò thành công ${batches} mẻ "${recipe.name}" (+${made} bánh vào tủ thành phẩm)!`);
+      showNotice(`Ra lò +${made} bánh "${recipe.name}"!`);
     }
 
     function handleOrderSubmit(e) {
@@ -2410,13 +2833,12 @@
           });
           subtotal += Number(rec.salePrice) * qty;
           totalCogs += Math.round(c.unitCost * qty);
-          // Trừ bánh thành phẩm nếu có sẵn
           rec.finishedStock = Math.max(0, Number(rec.finishedStock || 0) - qty);
         }
       });
 
       if (items.length === 0) {
-        showNotice('Vui lòng chọn ít nhất 1 món bánh cho đơn hàng!', true);
+        showNotice('Vui lòng chọn ít nhất 1 món bánh!', true);
         return;
       }
 
@@ -2446,7 +2868,7 @@
       closeModal();
       triggerActivity('bake');
       renderCurrentView();
-      showNotice(`Đã tạo đơn hàng ${orderCode} (${money.format(total)})!`);
+      showNotice(`Đã tạo đơn ${orderCode} (${money.format(total)})!`);
     }
 
     function handleTransactionSubmit(e) {
@@ -2475,7 +2897,7 @@
       closeModal();
       triggerActivity('office');
       renderCurrentView();
-      showNotice(`Đã ghi sổ quỹ: ${direction === 'income' ? '+' : '−'}${money.format(amount)} (${category})`);
+      showNotice(`Đã ghi sổ: ${direction === 'income' ? '+' : '−'}${money.format(amount)}`);
     }
 
     // --- BACKUP & RESTORE ---
@@ -2487,7 +2909,7 @@
       a.download = `MVie-Cake-Backup-${todayIso()}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showNotice("Đã tải file sao lưu dữ liệu (.json) thành công!");
+      showNotice("Đã tải file sao lưu (.json)!");
     }
 
     function restoreJsonBackup(event) {
@@ -2498,27 +2920,27 @@
         try {
           const parsed = JSON.parse(e.target.result);
           if (!parsed.ingredients || !parsed.recipes || !parsed.orders) {
-            throw new Error("File không đúng định dạng dữ liệu M’Vie Cake.");
+            throw new Error("File không đúng định dạng M’Vie Cake.");
           }
           appData = parsed;
           saveData();
           closeModal();
           renderCurrentView();
-          showNotice("Đã khôi phục toàn bộ dữ liệu tiệm bánh thành công!");
+          showNotice("Đã khôi phục dữ liệu thành công!");
         } catch (err) {
-          showNotice("Lỗi đọc file sao lưu: " + err.message, true);
+          showNotice("Lỗi file: " + err.message, true);
         }
       };
       reader.readAsText(file);
     }
 
     function resetToSampleData() {
-      if (!confirm("Khôi phục về dữ liệu mẫu ban đầu của M’Vie Cake? (Dữ liệu bạn vừa nhập thêm sẽ được đặt lại)")) return;
+      if (!confirm("Đặt lại về bộ dữ liệu mẫu ban đầu của M’Vie Cake?")) return;
       appData = JSON.parse(JSON.stringify(defaultData));
       saveData();
       closeModal();
       renderCurrentView();
-      showNotice("Đã khôi phục dữ liệu mẫu M’Vie Cake!");
+      showNotice("Đã khôi phục dữ liệu mẫu!");
     }
 
     // --- INITIALIZE ---
